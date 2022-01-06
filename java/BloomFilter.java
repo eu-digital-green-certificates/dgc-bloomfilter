@@ -5,5 +5,5 @@ import java.security.NoSuchAlgorithmException;
 
 public interface BloomFilter {
     void add(byte[] element) throws NoSuchAlgorithmException, IOException;
-    float contains(byte[] element) throws NoSuchAlgorithmException, IOException;
+    boolean contains(byte[] element) throws NoSuchAlgorithmException, IOException;
 }
