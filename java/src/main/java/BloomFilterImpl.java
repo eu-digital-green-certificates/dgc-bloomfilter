@@ -3,21 +3,23 @@
  * Author: Paul Ballmann
  */
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLongArray;
 
-public class BloomFilterImpl implements BloomFilter {
+public class BloomFilterImpl implements BloomFilter, Serializable {
     private final int numBytes;
     private final int numberOfHashes;
     private final AtomicLongArray bits;
     private final static int NUM_BITS = 8;
+    @Serial
+    private static final long serialVersionUID = 7526472295622776147L;
 
     public BloomFilterImpl(int size, int numberOfHashes) {
-
+        super();
         if (numberOfHashes == 0) {
             throw new IllegalArgumentException("numberOfHashes cannot be 0");
         }
@@ -27,6 +29,7 @@ public class BloomFilterImpl implements BloomFilter {
     }
 
     public BloomFilterImpl(int numberOfElements, int numberOfHashes, float probRate) {
+        super();
         if (numberOfElements == 0 || numberOfHashes == 0 || probRate > 1 || probRate == 0) {
             throw new IllegalArgumentException("numberOfElements != 0, numberOfHashes != 0, probRate <= 1");
         }
@@ -75,4 +78,49 @@ public class BloomFilterImpl implements BloomFilter {
         outputStream.write(charAsByte);
         return md.digest(outputStream.toByteArray());
     }
+
+    /**
+     * Indicates whether some other object is "equal to" this one.
+     *
+     * @param obj the reference object with which to compare.
+     * @return {@code true} if this object is the same as the obj
+     * argument; {@code false} otherwise.
+     * @see #hashCode()
+     * @see HashMap
+     */
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    /**
+     * Creates and returns a copy of this object.  The precise meaning
+     * of "copy" may depend on the class of the object.
+     *
+     * @return a clone of this instance.
+     * @throws CloneNotSupportedException if the object's class does not
+     *                                    support the {@code Cloneable} interface. Subclasses
+     *                                    that override the {@code clone} method can also
+     *                                    throw this exception to indicate that an instance cannot
+     *                                    be cloned.
+     * @see Cloneable
+     */
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+    private void readObject(
+            ObjectInputStream inputStream
+    ) throws ClassNotFoundException, IOException {
+        inputStream.defaultReadObject();
+    }
+
+    private void writeObject(
+            ObjectOutputStream outputStream
+    ) throws IOException {
+        outputStream.defaultWriteObject();
+    }
+
+
 }
