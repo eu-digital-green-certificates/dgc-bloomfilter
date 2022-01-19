@@ -3,10 +3,12 @@
  * Author: Paul Ballmann
  */
 
-import com.google.common.hash.BloomFilter;
+import com.google.common.primitives.SignedBytes;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -16,11 +18,11 @@ import java.util.concurrent.atomic.AtomicLongArray;
 public class BloomFilterImpl implements BloomFilter, Serializable {
     private final int numBytes;
     private final int numberOfHashes;
+    private final float probRate;
     private final AtomicLongArray bits;
     private final static int NUM_BITS = 8;
     @Serial
     private static final long serialVersionUID = 7526472295622776147L;
-    private final BloomFilter<String> bloomFilter;
 
     public BloomFilterImpl(int size, int numberOfHashes) {
         super();
@@ -29,6 +31,8 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         }
         this.numBytes = (size * NUM_BITS);
         this.numberOfHashes = numberOfHashes;
+        // p = pow(1 - exp(-k / (m / n)), k)
+        this.probRate = (float) Math.pow(1 - Math.exp(-numberOfHashes / ( (this.numBytes / NUM_BITS) / this.numBytes)), numberOfHashes);
         this.bits = new AtomicLongArray(this.numBytes);
     }
 
@@ -41,6 +45,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         // m: numberOfBits -> ceil((n * log(p)) / log(1 / pow(2, log(2))));
         this.numBytes = (int) (Math.ceil((numberOfElements * Math.log(probRate)) / Math.log(1 / Math.pow(2, Math.log(2)))));
         this.numberOfHashes = numberOfHashes;
+        this.probRate = probRate;
         this.bits = new AtomicLongArray(this.numBytes);
     }
 
@@ -82,6 +87,38 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         outputStream.write(charAsByte);
         return md.digest(outputStream.toByteArray());
     }
+
+
+
+    //region Streams
+
+    /**
+     * Writes the filter to an output stream in a structured manner
+     * 0 byte -> k (numberOfHashes)
+     * 1 - 4 byte -> p (probRate)
+     * 5 - x byte -> data as utf8
+     * @param outputStream
+     * @throws IOException
+     */
+    public void writeTo(OutputStream outputStream) throws IOException {
+        // k = 1 (numberOfHashes), p = 4 (probRate),
+        // 0 = k, 1 = p, 5 = filter
+        final int DATA_OFFSET = 5;
+        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+        dataOutputStream.write(new byte[]{ UnsignedBytes.checkedCast(this.numberOfHashes) }, 0, 1);
+        dataOutputStream.write(new byte[]{ SignedBytes.checkedCast((long)this.probRate) }, 1, 4);
+        // dataOutputStream.writeInt(this.numberOfHashes);
+        // dataOutputStream.write(UnsignedBytes.checkedCast(((long) this.probRate)));
+        // dataOutputStream.write(this.getBits().toString().getBytes(StandardCharsets.UTF_8));
+        dataOutputStream.write(this.getBits().toString().getBytes(StandardCharsets.UTF_8),
+                DATA_OFFSET, this.getBits().length());
+        /*
+        for (int i = 0; i < this.getBits().length(); i++) {
+            dataOutputStream.writeLong(this.getBits().get(i));
+        }
+        */
+    }
+    //endregion
 
     //region Utility
     /**
