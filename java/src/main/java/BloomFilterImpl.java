@@ -3,11 +3,14 @@
  * Author: Paul Ballmann
  */
 
+import com.google.common.hash.BloomFilter;
+
 import java.io.*;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
@@ -17,6 +20,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     private final static int NUM_BITS = 8;
     @Serial
     private static final long serialVersionUID = 7526472295622776147L;
+    private final BloomFilter<String> bloomFilter;
 
     public BloomFilterImpl(int size, int numberOfHashes) {
         super();
@@ -79,6 +83,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         return md.digest(outputStream.toByteArray());
     }
 
+    //region Utility
     /**
      * Indicates whether some other object is "equal to" this one.
      *
@@ -110,6 +115,10 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         return super.clone();
     }
 
+    public int hashCode() {
+        return Objects.hashCode(new Object[]{this.numBytes, this.numberOfHashes, this.getBits()});
+    }
+
     private void readObject(
             ObjectInputStream inputStream
     ) throws ClassNotFoundException, IOException {
@@ -121,6 +130,6 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     ) throws IOException {
         outputStream.defaultWriteObject();
     }
-
+    //endregion
 
 }
