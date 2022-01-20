@@ -16,13 +16,19 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
-    private final int numBytes;
-    private final int numberOfHashes;
-    private final float probRate;
-    private final AtomicLongArray bits;
+    private int numBytes;
+    private int numberOfHashes;
+    private float probRate;
+    private AtomicLongArray bits;
     private final static int NUM_BITS = 8;
+    private final static int DATA_OFFSET = 6;
     @Serial
     private static final long serialVersionUID = 7526472295622776147L;
+
+    public BloomFilterImpl(InputStream inputStream) {
+        DataInputStream dis = new DataInputStream(inputStream);
+        this.readFromStream(dis);
+    }
 
     public BloomFilterImpl(int size, int numberOfHashes) {
         super();
@@ -96,17 +102,19 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
      * Writes the filter to an output stream in a structured manner
      * 0 byte -> k (numberOfHashes)
      * 1 - 4 byte -> p (probRate)
-     * 5 - x byte -> data as utf8
+     * 5 byte -> unsigned length of the data
+     * 6 - x byte -> data as utf8
      * @param outputStream
      * @throws IOException
      */
     public void writeTo(OutputStream outputStream) throws IOException {
         // k = 1 (numberOfHashes), p = 4 (probRate),
         // 0 = k, 1 = p, 5 = filter
-        final int DATA_OFFSET = 5;
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+
         dataOutputStream.write(new byte[]{ UnsignedBytes.checkedCast(this.numberOfHashes) }, 0, 1);
         dataOutputStream.write(new byte[]{ SignedBytes.checkedCast((long)this.probRate) }, 1, 4);
+        dataOutputStream.write(new byte[]{ UnsignedBytes.checkedCast(this.getBits().length())}, 5, 1);
         // dataOutputStream.writeInt(this.numberOfHashes);
         // dataOutputStream.write(UnsignedBytes.checkedCast(((long) this.probRate)));
         // dataOutputStream.write(this.getBits().toString().getBytes(StandardCharsets.UTF_8));
@@ -117,6 +125,34 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
             dataOutputStream.writeLong(this.getBits().get(i));
         }
         */
+    }
+
+    private void readFromStream(DataInputStream dis) {
+        try {
+            this.numberOfHashes = dis.read(new byte[1]);
+            this.probRate = dis.read(new byte[4]);
+            int dataLength = dis.read(new byte[1]);
+            long[] data = new long[dataLength];
+            for (int i = 0; i < dataLength; i++) {
+                data[i] = dis.read();
+            }
+            this.bits = new AtomicLongArray(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Will try to read data from the input stream to constrcut a new bloomFilter from
+     *      * 0 byte -> k (numberOfHashes)
+     *      * 1 - 4 byte -> p (probRate)
+     *      * 5 - x byte -> data as utf8
+     * @param inputStream
+     * @throws IOException
+     */
+    public void readFrom(InputStream inputStream) {
+        DataInputStream dataInputStream = new DataInputStream(inputStream);
+        this.readFromStream(dataInputStream);
     }
     //endregion
 
