@@ -12,15 +12,20 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 
@@ -37,7 +42,7 @@ public class BloomFilterUnitTest {
         impl.add(new byte[]{0,5,33,44});
         assert impl.contains(new byte[]{0,5,33,44});
         assert impl.getData().length() == 1;
-        assert impl.getData().get(0) == (Long.MIN_VALUE>>>57);
+        assert impl.getData().get(0) == (Integer.MIN_VALUE>>>25);
     }
 
     @Test
@@ -45,24 +50,98 @@ public class BloomFilterUnitTest {
         BloomFilterImpl impl = new BloomFilterImpl(8, 1);
         impl.add(new byte[]{0,5,33,44});
 
-        int size = 2; 
-        int numBits = size*(8*Integer.BYTES);
+        int size = 1; 
+        int numBits = size*(8*Long.BYTES);
 
-        AtomicIntegerArray integerArray = new AtomicIntegerArray(size);
+        AtomicLongArray longArray = new AtomicLongArray(size);
 
         int index = impl.calcIndex(new byte[]{0,5,33,44}, 0,numBits).intValue();
-        int bytepos = index/(Integer.BYTES*8);
-        int pattern = Integer.MIN_VALUE>>>index-1;
-        integerArray.set(bytepos,integerArray.get(bytepos) | pattern);
+        int bytepos = index/(Long.BYTES*8);
+        long pattern = Long.MIN_VALUE>>>index-1;
+        longArray.set(bytepos,longArray.get(bytepos) | pattern);
 
-        assert impl.getData().get(0) == integerArray.get(1);
+        assert impl.getData().get(1) == longArray.get(0);
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMaxValues() throws NoSuchAlgorithmException, IOException
+    {
+        BloomFilterImpl impl = new BloomFilterImpl(Integer.MAX_VALUE, 1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMinValues() throws NoSuchAlgorithmException, IOException
+    {
+        BloomFilterImpl impl = new BloomFilterImpl(Integer.MIN_VALUE, 1);
+    }
+
+    @Test()
+    public void testNormalValues() throws NoSuchAlgorithmException, IOException
+    {
+        BloomFilterImpl impl = new BloomFilterImpl(56049, 20);
+        impl.add(new byte[]{0,9,44});
+        assert impl.contains(new byte[]{0,9,44});
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMaxElementSize() throws NoSuchAlgorithmException, IOException
+    {
+        BloomFilterImpl impl = new BloomFilterImpl(30000000,1,0.0000000001f); //ca. 30M per Filter
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMinElementSize() throws NoSuchAlgorithmException, IOException
+    {
+        BloomFilterImpl impl = new BloomFilterImpl(0,1,0.0000000001f); 
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNegativeElementSize() throws NoSuchAlgorithmException, IOException
+    {
+        BloomFilterImpl impl = new BloomFilterImpl(0,-1,0.0000000001f); 
+    }
+
+    @Test()
+    public void testByteStream() throws NoSuchAlgorithmException, IOException
+    {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        BloomFilterImpl impl = new BloomFilterImpl(500,10,0.000000001f); 
+        impl.add(new byte[]{5,3,2,7});
+        impl.add(new byte[]{5,3,0});
+        impl.add(new byte[]{5,2,7});
+        impl.add(new byte[]{5,1,2,0});
+        impl.add(new byte[]{5});
+        assert !impl.contains(new byte[]{5,5});
+        impl.writeTo(output);
+
+        BloomFilterImpl impl2 = new BloomFilterImpl(new ByteArrayInputStream(output.toByteArray()));
+        assert impl2.getK() == impl.getK();
+        assert impl2.getP() == impl.getP();
+        assert impl2.getM() == impl.getM();
+        assert impl.contains(new byte[]{5,3,2,7});
+        assert impl.contains(new byte[]{5,3,0});
+        assert impl.contains(new byte[]{5,2,7});
+        assert impl.contains(new byte[]{5,1,2,0});
+        assert impl.contains(new byte[]{5});
+        assert !impl.contains(new byte[]{5,5});
+        assert impl.getData().length() == impl2.getData().length();
+    }
+
+    @Test()
+    public void testByteOutputStream() throws NoSuchAlgorithmException, IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        BloomFilterImpl impl = new BloomFilterImpl(1,1);
+        impl.writeTo(output); 
+        byte[] b = output.toByteArray();
+        assert b.length == 18;
+    }
+
 
     @Test
     public void compareSizes()
     {
         BloomFilterImpl impl = new BloomFilterImpl(1, 1);
-        BloomFilterImpl impl2 = new BloomFilterImpl(1,1,0.125);
+        BloomFilterImpl impl2 = new BloomFilterImpl(1,1,0.125f);
         assert impl.getData().length() == impl2.getData().length();
     }
 
