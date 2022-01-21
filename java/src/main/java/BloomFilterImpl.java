@@ -13,15 +13,16 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
     private int numBits;
     private int numberOfHashes;
-    private float probRate;
+    private double probRate;
     private AtomicLongArray data;
     private final static int NUM_BITS = 8;
-    private final static byte NUM_BYTES=8;
+    private final static byte NUM_BYTES=Long.BYTES;
     @Serial
     private static final long serialVersionUID = 7526472295622776147L;
 
@@ -36,23 +37,14 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
             throw new IllegalArgumentException("numberOfHashes cannot be 0");
         }
 
-        this.numBits = (size / NUM_BYTES)*(int)Math.pow(NUM_BYTES, 2);
-
-        if( this.numBits == 0) {
-            this.numBits = (int)Math.pow(NUM_BYTES, 2);
-            size = 1;
-        }
-        else {
-            size = (size / NUM_BYTES)+(size % NUM_BYTES);
-        }
-
+        size = (size / NUM_BYTES)+(size % NUM_BYTES);  
+        this.numBits = ((size / NUM_BYTES)+(size % NUM_BYTES))*(NUM_BITS*NUM_BYTES);
         this.numberOfHashes = numberOfHashes;
-        // p = pow(1 - exp(-k / (m / n)), k)
         this.probRate = (float) Math.pow(1 - Math.exp(-numberOfHashes / (float)( (float)(this.numBits / NUM_BITS) / this.numBits)), numberOfHashes);
         this.data = new AtomicLongArray(size);
     }
 
-    public BloomFilterImpl(int numberOfElements, int numberOfHashes, float probRate) {
+    public BloomFilterImpl(int numberOfElements, int numberOfHashes, double probRate) {
         super();
         if (numberOfElements == 0 || numberOfHashes == 0 || probRate > 1 || probRate == 0) {
             throw new IllegalArgumentException("numberOfElements != 0, numberOfHashes != 0, probRate <= 1");
@@ -60,9 +52,13 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         // n: numberOfElements
         // m: numberOfBits -> ceil((n * log(p)) / log(1 / pow(2, log(2))));
         this.numBits = (int) (Math.ceil((numberOfElements * Math.log(probRate)) / Math.log(1 / Math.pow(2, Math.log(2)))));
+         
+        int bytes = (this.numBits / NUM_BITS)+1;
+        int size  = (bytes / NUM_BYTES)+(bytes % NUM_BYTES);  
+
         this.numberOfHashes = numberOfHashes;
         this.probRate = probRate;
-        this.data = new AtomicLongArray(this.numBits);
+        this.data = new AtomicLongArray(size);
     }
 
     public AtomicLongArray getData() {
@@ -72,9 +68,9 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     @Override
     public void add(byte[] element) throws NoSuchAlgorithmException, IOException {
         for (int i = 0; i < this.numberOfHashes; i++) {
-            int index = this.calcInternal(element, i).intValue();
+            int index = this.calcIndex(element, i,this.numBits).intValue();
             System.out.println("INDEX: " + index);
-            int bytepos = index/ (int) Math.pow(NUM_BYTES, 2);
+            int bytepos = index/(NUM_BYTES*NUM_BITS);
             long pattern = Long.MIN_VALUE>>>index-1;
             this.data.set(bytepos,this.data.get(bytepos) | pattern);
         }
@@ -83,8 +79,8 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     @Override
     public boolean contains(byte[] element) throws NoSuchAlgorithmException, IOException {
         for (int i = 0; i < this.numberOfHashes; i++) {
-            int index = this.calcInternal(element, i).intValue();
-            int bytepos = index/ (int) Math.pow(NUM_BYTES, 2);
+            int index = this.calcIndex(element, i,this.numBits).intValue();
+            int bytepos = index/(NUM_BYTES*NUM_BITS);
             long pattern = Long.MIN_VALUE>>>index-1;
             if ((this.data.get(bytepos) & pattern) == pattern) {
                 return true;
@@ -93,9 +89,9 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         return false;
     }
 
-    private BigInteger calcInternal(byte[] element, int i) throws NoSuchAlgorithmException, IOException {
+    public BigInteger calcIndex(byte[] element, int i,long bits) throws NoSuchAlgorithmException, IOException {
         BigInteger bi = new BigInteger(this.hash(element, (char) i));
-        return bi.mod(BigInteger.valueOf(this.numBits));
+        return bi.mod(BigInteger.valueOf(bits));
     }
 
     private byte[] hash(byte[] toHash, char seed) throws NoSuchAlgorithmException, IOException {
@@ -125,16 +121,9 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         // k = 1 (numberOfHashes), p = 4 (probRate),
         // 0 = k, 1 = p, 5 = filter
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-       
-       // dataOutputStream.write(new byte[]{ UnsignedBytes.checkedCast(this.numberOfHashes) }, 0, 1);
-       // dataOutputStream.write(new byte[]{ SignedBytes.checkedCast((long)this.probRate) }, 1, 4);
-        //dataOutputStream.write(new byte[]{ UnsignedBytes.checkedCast(this.getData().length())}, 5, 1);
-        // dataOutputStream.writeInt(this.numberOfHashes);
-        // dataOutputStream.write(UnsignedBytes.checkedCast(((long) this.probRate)));
-        // dataOutputStream.write(this.getBits().toString().getBytes(StandardCharsets.UTF_8));
-        /*dataOutputStream.write(this.getBits().toString().getBytes(StandardCharsets.UTF_8),
-                DATA_OFFSET, this.getBits().length());*/
-        
+        dataOutputStream.writeInt(this.numberOfHashes);
+        dataOutputStream.writeDouble(this.probRate);
+        dataOutputStream.writeInt(this.getData().length());        
         for (int i = 0; i < this.getData().length(); i++) {
             dataOutputStream.writeLong(this.getData().get(i));
         }
@@ -143,12 +132,12 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
 
     private void readFromStream(DataInputStream dis) {
         try {
-            this.numberOfHashes = dis.read(new byte[1]);
-            this.probRate = dis.read(new byte[4]);
-            int dataLength = dis.read(new byte[1]);
+            this.numberOfHashes = dis.readInt();
+            this.probRate = dis.readDouble();
+            int dataLength = dis.readInt();
             long[] data = new long[dataLength];
             for (int i = 0; i < dataLength; i++) {
-                data[i] = dis.read();
+                data[i] = dis.readLong();
             }
             this.data = new AtomicLongArray(data);
         } catch (IOException e) {

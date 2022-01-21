@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class BloomFilterUnitTest {
@@ -36,6 +38,32 @@ public class BloomFilterUnitTest {
         assert impl.contains(new byte[]{0,5,33,44});
         assert impl.getData().length() == 1;
         assert impl.getData().get(0) == (Long.MIN_VALUE>>>57);
+    }
+
+    @Test
+    public void runDifferentByteSizeBlock() throws NoSuchAlgorithmException, IOException {
+        BloomFilterImpl impl = new BloomFilterImpl(8, 1);
+        impl.add(new byte[]{0,5,33,44});
+
+        int size = 2; 
+        int numBits = size*(8*Integer.BYTES);
+
+        AtomicIntegerArray integerArray = new AtomicIntegerArray(size);
+
+        int index = impl.calcIndex(new byte[]{0,5,33,44}, 0,numBits).intValue();
+        int bytepos = index/(Integer.BYTES*8);
+        int pattern = Integer.MIN_VALUE>>>index-1;
+        integerArray.set(bytepos,integerArray.get(bytepos) | pattern);
+
+        assert impl.getData().get(0) == integerArray.get(1);
+    }
+
+    @Test
+    public void compareSizes()
+    {
+        BloomFilterImpl impl = new BloomFilterImpl(1, 1);
+        BloomFilterImpl impl2 = new BloomFilterImpl(1,1,0.125);
+        assert impl.getData().length() == impl2.getData().length();
     }
 
     @Test
