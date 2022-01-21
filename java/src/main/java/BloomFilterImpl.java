@@ -2,9 +2,6 @@
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann/Steffen Schulze
  */
-import com.google.common.primitives.Longs;
-import com.google.common.primitives.SignedBytes;
-import com.google.common.primitives.UnsignedBytes;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -12,7 +9,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicIntegerArray;
-import java.util.concurrent.atomic.AtomicLongArray;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
     private long numBits;
