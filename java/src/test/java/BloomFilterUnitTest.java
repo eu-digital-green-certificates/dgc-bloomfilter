@@ -10,7 +10,10 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -20,17 +23,20 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class BloomFilterUnitTest {
-    // func: read json file
-    // func: write to json file
-    // func: run bloom filter
-    // func: run guava bloom filter
 
     private static String JSON_TEST_FILE = "src/test/resources/testcase1.json";
     private JSONArray testObjects = null;
     private BloomFilterImpl bloomFilter;
     private FilterTestData filterTestData = null;
-    // private List<BloomFilterImpl> filterList = new ArrayList<>();
 
+    @Test
+    public void runBasicBloom() throws NoSuchAlgorithmException, IOException {
+        BloomFilterImpl impl = new BloomFilterImpl(1, 1);
+        impl.add(new byte[]{0,5,33,44});
+        assert impl.contains(new byte[]{0,5,33,44});
+        assert impl.getData().length() == 1;
+        assert impl.getData().get(0) == (Long.MIN_VALUE>>>57);
+    }
 
     @Test
     public void runTests() throws Exception {
@@ -69,10 +75,10 @@ public class BloomFilterUnitTest {
 
     public void calcBaseStringFromFilter(int i) {
         // get base64 from filter
-        String filterAsBase64 = this.getFilterAsBase64(this.bloomFilter.getBits());
-        this.writeToJson((JSONObject) this.testObjects.get(i), i);
+      //  String filterAsBase64 = this.getFilterAsBase64(this.bloomFilter.getBytes());
+     //  this.writeToJson((JSONObject) this.testObjects.get(i), i);
         // store base64 in data
-        this.storeBase64InFile(i, filterAsBase64);
+      //  this.storeBase64InFile(i, filterAsBase64);
     }
 
     public void filterLookupTest(FilterTestData testData, int index) throws Exception {
@@ -174,7 +180,7 @@ public class BloomFilterUnitTest {
     }
 
     private void printTsiFilterBits() {
-        System.out.println(this.bloomFilter.getBits().toString());
+      // System.out.println(this.bloomFilter.getBytes().toString());
     }
 
     private void addToTsiBloomFilter(FilterTestData data) {
