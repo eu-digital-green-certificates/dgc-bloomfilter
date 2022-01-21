@@ -3,17 +3,12 @@
  * Author: Paul Ballmann
  */
 
-import com.google.common.primitives.SignedBytes;
-import com.google.common.primitives.UnsignedBytes;
-
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
@@ -22,11 +17,12 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     private double probRate;
     private AtomicLongArray data;
     private final static int NUM_BITS = 8;
-    private final static byte NUM_BYTES=Long.BYTES;
+    private final static byte NUM_BYTES = Long.BYTES;
     @Serial
     private static final long serialVersionUID = 7526472295622776147L;
 
     public BloomFilterImpl(InputStream inputStream) {
+        super();
         DataInputStream dis = new DataInputStream(inputStream);
         this.readFromStream(dis);
     }
@@ -37,10 +33,10 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
             throw new IllegalArgumentException("numberOfHashes cannot be 0");
         }
 
-        size = (size / NUM_BYTES)+(size % NUM_BYTES);  
-        this.numBits = ((size / NUM_BYTES)+(size % NUM_BYTES))*(NUM_BITS*NUM_BYTES);
+        size = (size / NUM_BYTES) + (size % NUM_BYTES);
+        this.numBits = ((size / NUM_BYTES) + (size % NUM_BYTES)) * (NUM_BITS * NUM_BYTES);
         this.numberOfHashes = numberOfHashes;
-        this.probRate = (float) Math.pow(1 - Math.exp(-numberOfHashes / (float)( (float)(this.numBits / NUM_BITS) / this.numBits)), numberOfHashes);
+        this.probRate = (float) Math.pow(1 - Math.exp(-numberOfHashes / ((float) (this.numBits / NUM_BITS) / this.numBits)), numberOfHashes);
         this.data = new AtomicLongArray(size);
     }
 
@@ -52,9 +48,9 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         // n: numberOfElements
         // m: numberOfBits -> ceil((n * log(p)) / log(1 / pow(2, log(2))));
         this.numBits = (int) (Math.ceil((numberOfElements * Math.log(probRate)) / Math.log(1 / Math.pow(2, Math.log(2)))));
-         
-        int bytes = (this.numBits / NUM_BITS)+1;
-        int size  = (bytes / NUM_BYTES)+(bytes % NUM_BYTES);  
+
+        int bytes = (this.numBits / NUM_BITS) + 1;
+        int size = (bytes / NUM_BYTES) + (bytes % NUM_BYTES);
 
         this.numberOfHashes = numberOfHashes;
         this.probRate = probRate;
@@ -68,20 +64,20 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     @Override
     public void add(byte[] element) throws NoSuchAlgorithmException, IOException {
         for (int i = 0; i < this.numberOfHashes; i++) {
-            int index = this.calcIndex(element, i,this.numBits).intValue();
+            int index = this.calcIndex(element, i, this.numBits).intValue();
             System.out.println("INDEX: " + index);
-            int bytepos = index/(NUM_BYTES*NUM_BITS);
-            long pattern = Long.MIN_VALUE>>>index-1;
-            this.data.set(bytepos,this.data.get(bytepos) | pattern);
+            int bytepos = index / (NUM_BYTES * NUM_BITS);
+            long pattern = Long.MIN_VALUE >>> index - 1;
+            this.data.set(bytepos, this.data.get(bytepos) | pattern);
         }
     }
 
     @Override
     public boolean contains(byte[] element) throws NoSuchAlgorithmException, IOException {
         for (int i = 0; i < this.numberOfHashes; i++) {
-            int index = this.calcIndex(element, i,this.numBits).intValue();
-            int bytepos = index/(NUM_BYTES*NUM_BITS);
-            long pattern = Long.MIN_VALUE>>>index-1;
+            int index = this.calcIndex(element, i, this.numBits).intValue();
+            int bytepos = index / (NUM_BYTES * NUM_BITS);
+            long pattern = Long.MIN_VALUE >>> index - 1;
             if ((this.data.get(bytepos) & pattern) == pattern) {
                 return true;
             }
@@ -89,7 +85,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         return false;
     }
 
-    public BigInteger calcIndex(byte[] element, int i,long bits) throws NoSuchAlgorithmException, IOException {
+    public BigInteger calcIndex(byte[] element, int i, long bits) throws NoSuchAlgorithmException, IOException {
         BigInteger bi = new BigInteger(this.hash(element, (char) i));
         return bi.mod(BigInteger.valueOf(bits));
     }
@@ -105,7 +101,6 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     }
 
 
-
     //region Streams
 
     /**
@@ -114,6 +109,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
      * 1 - 4 byte -> p (probRate)
      * 5 byte -> unsigned length of the data
      * 6 - x byte -> data as utf8
+     *
      * @param outputStream
      * @throws IOException
      */
@@ -123,11 +119,11 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
         dataOutputStream.writeInt(this.numberOfHashes);
         dataOutputStream.writeDouble(this.probRate);
-        dataOutputStream.writeInt(this.getData().length());        
+        dataOutputStream.writeInt(this.getData().length());
         for (int i = 0; i < this.getData().length(); i++) {
             dataOutputStream.writeLong(this.getData().get(i));
         }
-        
+
     }
 
     private void readFromStream(DataInputStream dis) {
@@ -147,9 +143,10 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
 
     /**
      * Will try to read data from the input stream to constrcut a new bloomFilter from
-     *      * 0 byte -> k (numberOfHashes)
-     *      * 1 - 4 byte -> p (probRate)
-     *      * 5 - x byte -> data as utf8
+     * * 0 byte -> k (numberOfHashes)
+     * * 1 - 4 byte -> p (probRate)
+     * * 5 - x byte -> data as utf8
+     *
      * @param inputStream
      * @throws IOException
      */
@@ -160,6 +157,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     //endregion
 
     //region Utility
+
     /**
      * Indicates whether some other object is "equal to" this one.
      *
