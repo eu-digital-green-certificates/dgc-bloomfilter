@@ -67,8 +67,24 @@ To align the implementations, some points must be considered during the implemen
 - All bits are grouped in blocks of 4 Byte (Array of 4 Byte Objects, not an Array Single Bits --> more space efficent)
 - It doesnt matter which blocksize is used in a language (unsigned or signed is also not important), the only important thing is the bitshifting capability for a single bit (no filling during shift).
 - Maximum of the Filter must be an array containing 4 Byte values with an amount of maximum 4 Bytes (e.g. int [] with i=Integer.MAX_VALUE)
-- Hash Function is currently SHA256, because other Functions like MUMUR_3 are not in every language available
+- Hash Function is currently SHA256 (Default: 0 in Dataformat), because other Functions like MUMUR_3 are not in every language available. If more Performance is necessary, please provide Enhancement Issues with your Change Proposals (or better a Pull Request)
+- It's only one hash function used with a seed within multiple rounds. Different hash functions are not necessary in terms of uniformity
 
+# Data Format
+
+The data format is a serialized byte stream with the following structure in Big Endian Format:
+
+|Pos| Byte                                     |   Field | Description                                                        |
+|---| -----------------------------------------|---------|--------------------------------------------------------------------|
+|0-1| 2 Byte signed Number (-32,768 to 32,767) | Version | Number which describes the current version of the used Data Format.|
+|2| 1 Byte signed Number       (-128 to 127) | Used Hashing | Number of the used Hashalgorithm (TOB) or Hash Strategy. Default is 0 for Uniform SHA256 Hashing|
+|3| 1 Byte signed Number (-128 to 127) | k | Amount of used Hash function calculations|
+|4-7| 4 Byte signed Decimal (7 Digits) | p | Probility Rate|
+|8-11| 4 Byte signed Number (-2,147,483,648 to 2,147,483,647) | n| Amount of Elements for which the filter was constructed|
+|12-15| 4 Byte signed Number (-2,147,483,648 to 2,147,483,647) | Current Filter Size | Amount of Elements which the filter currently carries|
+|16-21| 4 Byte signed Number (-2,147,483,648 to 2,147,483,647) | Data Length of Filter | Amount of Bytes of the Filter|
+|21-*| 4 Byte signed Number (-2,147,483,648 to 2,147,483,647) | Filter | Bytes of the Bloom Filter|
+     
 
 ## Support and feedback
 
