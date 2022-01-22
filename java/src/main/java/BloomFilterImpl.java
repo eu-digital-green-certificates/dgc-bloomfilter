@@ -16,6 +16,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     private byte numberOfHashes;
     private int currentElementAmount = 0;
     private int definedElementAmount = 0;
+    private byte usedHashFunction = 0;
     private float probRate;
     private AtomicIntegerArray data;
     private final static int NUM_BITS = 8;
@@ -162,6 +163,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         // 0 = k, 1 = p, 5 = filter
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
         dataOutputStream.writeShort(version);
+        dataOutputStream.writeByte(usedHashFunction);
         dataOutputStream.writeByte(this.numberOfHashes);
         dataOutputStream.writeFloat(this.probRate);
         dataOutputStream.writeInt(this.definedElementAmount);
@@ -177,6 +179,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         try {
             int version = dis.readShort(); // for later compatibility
             this.numberOfHashes = dis.readByte();
+            this.usedHashFunction = dis.readByte();
             this.probRate = dis.readFloat();
             this.definedElementAmount = dis.readInt();
             this.currentElementAmount = dis.readInt();
