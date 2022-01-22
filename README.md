@@ -92,7 +92,7 @@ The following channels are available for discussions, feedback, and support requ
 
 | Type                     | Channel                                                |
 | ------------------------ | ------------------------------------------------------ |
-| **Issues**    | <a href="/../../issues" title="Open Issues"><img src="https://img.shields.io/github/issues/eu-digital-green-certificates/dgca-validation-service?style=flat"></a>  |
+| **Issues**    | <a href="/../../issues" title="Open Issues"><img src="https://img.shields.io/github/issues/eu-digital-green-certificates/dgc-bloomfilter?style=flat"></a>  |
 | **Other requests**    | <a href="mailto:opensource@telekom.de" title="Email DGC Team"><img src="https://img.shields.io/badge/email-DGC%20team-green?logo=mail.ru&style=flat-square&logoColor=white"></a>   |
 
 ## How to contribute  
