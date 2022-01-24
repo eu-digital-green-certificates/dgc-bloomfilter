@@ -1,87 +1,138 @@
 /*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
- * Author: Paul Ballmann
+ * Author: Paul Ballmann/Steffen Schulze
  */
-
-import com.google.common.primitives.SignedBytes;
-import com.google.common.primitives.UnsignedBytes;
-
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.logging.Logger;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
-    private int numBytes;
-    private int numberOfHashes;
+    private long numBits;
+    private byte numberOfHashes;
+    private int currentElementAmount = 0;
+    private int definedElementAmount = 0;
+    private byte usedHashFunction = 0;
     private float probRate;
-    private AtomicLongArray bits;
+    private AtomicIntegerArray data;
     private final static int NUM_BITS = 8;
-    private final static int DATA_OFFSET = 6;
+    private final static byte NUM_BYTES=Integer.BYTES;
+    private final static byte NUM_BIT_FORMAT = (NUM_BYTES*NUM_BITS);
+
     @Serial
     private static final long serialVersionUID = 7526472295622776147L;
+    private static final short version = 1;
 
     public BloomFilterImpl(InputStream inputStream) {
+        super();
         DataInputStream dis = new DataInputStream(inputStream);
         this.readFromStream(dis);
     }
 
-    public BloomFilterImpl(int size, int numberOfHashes) {
+    public BloomFilterImpl(int size, byte numberOfHashes,int numberOfElements) {
         super();
+
+        if (numberOfHashes <= 0 || size<=0) {
+            throw new IllegalArgumentException("numberOfElements <=0, numberOfHashes <= 0, probRate <= 1");
+        }
+
         if (numberOfHashes == 0) {
             throw new IllegalArgumentException("numberOfHashes cannot be 0");
         }
-        this.numBytes = (size * NUM_BITS);
+
+        size = (size / NUM_BYTES)+(size % NUM_BYTES);  
+
+        long heapFreeSize = Runtime.getRuntime().freeMemory();
+
+        if(heapFreeSize<(long)size*NUM_BYTES) {
+            throw new IllegalArgumentException("Heap size not big enough");
+        }
+        this.definedElementAmount = numberOfElements;
+        this.numBits = (long)size*NUM_BIT_FORMAT;
         this.numberOfHashes = numberOfHashes;
-        // p = pow(1 - exp(-k / (m / n)), k)
-        this.probRate = (float) Math.pow(1 - Math.exp(-numberOfHashes / ( (this.numBytes / NUM_BITS) / this.numBytes)), numberOfHashes);
-        this.bits = new AtomicLongArray(this.numBytes);
+        this.probRate = (float) Math.pow(1 - Math.exp(-numberOfHashes / (float)( (float)(this.numBits / NUM_BITS) / numberOfElements)), numberOfHashes);
+        this.data = new AtomicIntegerArray(size);
     }
 
-    public BloomFilterImpl(int numberOfElements, int numberOfHashes, float probRate) {
+    public BloomFilterImpl(int numberOfElements, float probRate) {
         super();
-        if (numberOfElements == 0 || numberOfHashes == 0 || probRate > 1 || probRate == 0) {
-            throw new IllegalArgumentException("numberOfElements != 0, numberOfHashes != 0, probRate <= 1");
+        if (numberOfElements <= 0  || probRate > 1 || probRate <= 0) {
+            throw new IllegalArgumentException("numberOfElements <=0, probRate <= 1");
         }
         // n: numberOfElements
         // m: numberOfBits -> ceil((n * log(p)) / log(1 / pow(2, log(2))));
-        this.numBytes = (int) (Math.ceil((numberOfElements * Math.log(probRate)) / Math.log(1 / Math.pow(2, Math.log(2)))));
-        this.numberOfHashes = numberOfHashes;
+        this.numBits = (long) (Math.ceil((numberOfElements * Math.log((double)probRate)) / Math.log(1 / Math.pow(2, Math.log(2)))));
+         
+        int bytes = (int)(this.numBits / NUM_BITS)+1;
+        int size  = (bytes / NUM_BYTES)+(bytes % NUM_BYTES);  
+        this.numBits = size * NUM_BIT_FORMAT;
+        long heapFreeSize = Runtime.getRuntime().freeMemory();
+
+        if (size<=0) {
+            throw new IllegalArgumentException("Size can not be 0");
+        }
+
+        if (heapFreeSize < (long)size*NUM_BYTES) {
+            throw new IllegalArgumentException("Heap size not big enough");
+        }
+        
+        this.definedElementAmount = numberOfElements;
+        this.numberOfHashes = (byte)Math.max(1, (int) Math.round((double) this.numBits / numberOfElements * Math.log(2)));
+        
+        if(numberOfHashes<0) {
+            throw new IllegalArgumentException("Number of Hashes to high. Please check the Probalistic Rate (limit arround 1.0E-38)");
+        }
+        
         this.probRate = probRate;
-        this.bits = new AtomicLongArray(this.numBytes);
+        this.data = new AtomicIntegerArray(size);
     }
 
-    public AtomicLongArray getBits() {
-        return bits;
+    public AtomicIntegerArray getData() {
+        return data;
     }
 
     @Override
     public void add(byte[] element) throws NoSuchAlgorithmException, IOException {
         for (int i = 0; i < this.numberOfHashes; i++) {
-            BigInteger index = this.calcInternal(element, i);
-            System.out.println("INDEX: " + index);
-            this.bits.set(index.intValue(), 0x1);
+            long index = this.calcIndex(element, i,this.numBits).longValue();
+            int bytepos = (int)index/NUM_BIT_FORMAT;
+            index -= bytepos * NUM_BIT_FORMAT;
+            Integer pattern = Integer.MIN_VALUE>>>index-1;
+            this.data.set(bytepos,this.data.get(bytepos) | pattern);
+        }
+        currentElementAmount++;
+        
+        if(currentElementAmount >= definedElementAmount) {
+          Logger.getGlobal().warning("Filter is filled. All other Elements may result in a higher False Positve Rate than defined!");
         }
     }
 
     @Override
-    public boolean contains(byte[] element) throws NoSuchAlgorithmException, IOException {
+    public boolean mightContain(byte[] element) throws NoSuchAlgorithmException, IOException {
+        boolean result = true;
         for (int i = 0; i < this.numberOfHashes; i++) {
-            BigInteger index = this.calcInternal(element, i);
-            if (this.bits.get(index.intValue()) == 0x1) {
-                return true;
+            long index = this.calcIndex(element, i,this.numBits).longValue();
+            int bytepos = (int)index/NUM_BIT_FORMAT;
+            index -= bytepos * NUM_BIT_FORMAT;
+            long pattern = Integer.MIN_VALUE>>>index-1;
+            if ((this.data.get(bytepos) & pattern) == pattern) {
+                 result&=true;
+            }
+            else {
+                result &=false;
+                break;
             }
         }
-        return false;
+        return result;
     }
 
-    private BigInteger calcInternal(byte[] element, int i) throws NoSuchAlgorithmException, IOException {
+    public BigInteger calcIndex(byte[] element, int i, long bits) throws NoSuchAlgorithmException, IOException {
         BigInteger bi = new BigInteger(this.hash(element, (char) i));
-        return bi.mod(BigInteger.valueOf(this.numBytes));
+        return bi.mod(BigInteger.valueOf(bits));
     }
 
     private byte[] hash(byte[] toHash, char seed) throws NoSuchAlgorithmException, IOException {
@@ -95,7 +146,6 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     }
 
 
-
     //region Streams
 
     /**
@@ -104,6 +154,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
      * 1 - 4 byte -> p (probRate)
      * 5 byte -> unsigned length of the data
      * 6 - x byte -> data as utf8
+     *
      * @param outputStream
      * @throws IOException
      */
@@ -111,32 +162,34 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         // k = 1 (numberOfHashes), p = 4 (probRate),
         // 0 = k, 1 = p, 5 = filter
         DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-
-        dataOutputStream.write(new byte[]{ UnsignedBytes.checkedCast(this.numberOfHashes) }, 0, 1);
-        dataOutputStream.write(new byte[]{ SignedBytes.checkedCast((long)this.probRate) }, 1, 4);
-        dataOutputStream.write(new byte[]{ UnsignedBytes.checkedCast(this.getBits().length())}, 5, 1);
-        // dataOutputStream.writeInt(this.numberOfHashes);
-        // dataOutputStream.write(UnsignedBytes.checkedCast(((long) this.probRate)));
-        // dataOutputStream.write(this.getBits().toString().getBytes(StandardCharsets.UTF_8));
-        dataOutputStream.write(this.getBits().toString().getBytes(StandardCharsets.UTF_8),
-                DATA_OFFSET, this.getBits().length());
-        /*
-        for (int i = 0; i < this.getBits().length(); i++) {
-            dataOutputStream.writeLong(this.getBits().get(i));
+        dataOutputStream.writeShort(version);
+        dataOutputStream.writeByte(usedHashFunction);
+        dataOutputStream.writeByte(this.numberOfHashes);
+        dataOutputStream.writeFloat(this.probRate);
+        dataOutputStream.writeInt(this.definedElementAmount);
+        dataOutputStream.writeInt(this.currentElementAmount);
+        dataOutputStream.writeInt(this.getData().length());        
+        for (int i = 0; i < this.getData().length(); i++) {
+            dataOutputStream.writeInt(this.getData().get(i));
         }
-        */
+
     }
 
     private void readFromStream(DataInputStream dis) {
         try {
-            this.numberOfHashes = dis.read(new byte[1]);
-            this.probRate = dis.read(new byte[4]);
-            int dataLength = dis.read(new byte[1]);
-            long[] data = new long[dataLength];
+            int version = dis.readShort(); // for later compatibility
+            this.numberOfHashes = dis.readByte();
+            this.usedHashFunction = dis.readByte();
+            this.probRate = dis.readFloat();
+            this.definedElementAmount = dis.readInt();
+            this.currentElementAmount = dis.readInt();
+            int dataLength = dis.readInt();
+            int[] data = new int[dataLength];
             for (int i = 0; i < dataLength; i++) {
-                data[i] = dis.read();
+                data[i] = dis.readInt();
             }
-            this.bits = new AtomicLongArray(data);
+            this.data = new AtomicIntegerArray(data);
+            this.numBits = data.length * NUM_BIT_FORMAT;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -144,9 +197,10 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
 
     /**
      * Will try to read data from the input stream to constrcut a new bloomFilter from
-     *      * 0 byte -> k (numberOfHashes)
-     *      * 1 - 4 byte -> p (probRate)
-     *      * 5 - x byte -> data as utf8
+     * * 0 byte -> k (numberOfHashes)
+     * * 1 - 4 byte -> p (probRate)
+     * * 5 - x byte -> data as utf8
+     *
      * @param inputStream
      * @throws IOException
      */
@@ -157,6 +211,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     //endregion
 
     //region Utility
+
     /**
      * Indicates whether some other object is "equal to" this one.
      *
@@ -189,7 +244,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     }
 
     public int hashCode() {
-        return Objects.hashCode(new Object[]{this.numBytes, this.numberOfHashes, this.getBits()});
+        return Objects.hashCode(new Object[]{this.numBits, this.numberOfHashes, this.getData()});
     }
 
     private void readObject(
@@ -204,5 +259,30 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         outputStream.defaultWriteObject();
     }
     //endregion
+
+    @Override
+    public float getP() {
+        return this.probRate;
+    }
+
+    @Override
+    public int getK() {
+        return this.numberOfHashes;
+    }
+
+    @Override
+    public long getM() {
+        return this.numBits;
+    }
+
+    @Override
+    public int getN() {
+        return this.definedElementAmount;
+    }
+
+    @Override
+    public int getCurrentN() {
+        return this.definedElementAmount;
+    }
 
 }
