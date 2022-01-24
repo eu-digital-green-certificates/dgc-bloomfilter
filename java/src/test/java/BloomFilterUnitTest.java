@@ -3,6 +3,8 @@
  * Author: Paul Ballmann
  */
 
+import exception.FilterException;
+import exception.FilterExceptionsTypes;
 import model.FilterTestData;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -30,117 +32,108 @@ public class BloomFilterUnitTest {
     private FilterTestData filterTestData = null;
 
     @Test
-    public void runBasicBloom() throws NoSuchAlgorithmException, IOException {
-        BloomFilterImpl impl = new BloomFilterImpl(1,(byte)1,1);
-        impl.add(new byte[]{0,5,33,44});
-        assert impl.mightContain(new byte[]{0,5,33,44});
+    public void runBasicBloom() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(1, (byte) 1, 1);
+        impl.add(new byte[]{0, 5, 33, 44});
+        assert impl.mightContain(new byte[]{0, 5, 33, 44});
         assert impl.getData().length() == 1;
-        assert impl.getData().get(0) == (Integer.MIN_VALUE>>>25);
+        assert impl.getData().get(0) == (Integer.MIN_VALUE >>> 25);
     }
 
     @Test
-    public void runDifferentByteSizeBlock() throws NoSuchAlgorithmException, IOException {
-        BloomFilterImpl impl = new BloomFilterImpl(8,(byte)1,1);
-        impl.add(new byte[]{0,5,33,44});
+    public void runDifferentByteSizeBlock() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(8, (byte) 1, 1);
+        impl.add(new byte[]{0, 5, 33, 44});
 
-        int size = 1; 
-        int numBits = size*(8*Long.BYTES);
+        int size = 1;
+        int numBits = size * (8 * Long.BYTES);
 
         AtomicLongArray longArray = new AtomicLongArray(size);
 
-        int index = impl.calcIndex(new byte[]{0,5,33,44}, 0,numBits).intValue();
-        int bytepos = index/(Long.BYTES*8);
-        long pattern = Long.MIN_VALUE>>>index-1;
-        longArray.set(bytepos,longArray.get(bytepos) | pattern);
+        int index = impl.calcIndex(new byte[]{0, 5, 33, 44}, 0, numBits).intValue();
+        int bytepos = index / (Long.BYTES * 8);
+        long pattern = Long.MIN_VALUE >>> index - 1;
+        longArray.set(bytepos, longArray.get(bytepos) | pattern);
 
         assert impl.getData().get(1) == longArray.get(0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testMaxValues() throws NoSuchAlgorithmException, IOException
-    {
-        BloomFilterImpl impl = new BloomFilterImpl(Integer.MAX_VALUE, (byte)1,1);
+    @Test(expected = FilterException.class)
+    public void testMaxValues() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(Integer.MAX_VALUE, (byte) 1, 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testMinValues() throws NoSuchAlgorithmException, IOException
-    {
-        BloomFilterImpl impl = new BloomFilterImpl(Integer.MIN_VALUE, (byte)1,1);
-    }
-
-    @Test()
-    public void testNormalValues() throws NoSuchAlgorithmException, IOException
-    {
-        BloomFilterImpl impl = new BloomFilterImpl(56049, (byte)20,1);
-        impl.add(new byte[]{0,9,44});
-        assert impl.mightContain(new byte[]{0,9,44});
+    @Test(expected = FilterException.class)
+    public void testMinValues() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(Integer.MIN_VALUE, (byte) 1, 1);
     }
 
     @Test()
-    public void testPropBasesBitCalc() throws NoSuchAlgorithmException, IOException
-    {
-        BloomFilterImpl impl = new BloomFilterImpl(30000000,0.1f); //ca. 30M per Filter
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testMaxElementSize() throws NoSuchAlgorithmException, IOException
-    {
-        BloomFilterImpl impl = new BloomFilterImpl(30000000,0.0000000001f); //ca. 30M per Filter
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testMinElementSize() throws NoSuchAlgorithmException, IOException
-    {
-        BloomFilterImpl impl = new BloomFilterImpl(0,0.0000000001f); 
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNegativeElementSize() throws NoSuchAlgorithmException, IOException
-    {
-        BloomFilterImpl impl = new BloomFilterImpl(-1,0.0000000001f); 
+    public void testNormalValues() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(56049, (byte) 20, 1);
+        impl.add(new byte[]{0, 9, 44});
+        assert impl.mightContain(new byte[]{0, 9, 44});
     }
 
     @Test()
-    public void testByteStream() throws NoSuchAlgorithmException, IOException
-    {
+    public void testPropBasesBitCalc() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(30000000, 0.1f); //ca. 30M per Filter
+    }
+
+    @Test(expected = FilterException.class)
+    public void testMaxElementSize() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(30000000, 0.0000000001f); //ca. 30M per Filter
+    }
+
+    @Test(expected = FilterException.class)
+    public void testMinElementSize() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(0, 0.0000000001f);
+    }
+
+    @Test(expected = FilterException.class)
+    public void testNegativeElementSize() throws FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(-1, 0.0000000001f);
+    }
+
+    @Test()
+    public void testByteStream() throws FilterException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        BloomFilterImpl impl = new BloomFilterImpl(500,0.000000001f); 
-        impl.add(new byte[]{5,3,2,7});
-        impl.add(new byte[]{5,3,0});
-        impl.add(new byte[]{5,2,7});
-        impl.add(new byte[]{5,1,2,0});
+        BloomFilterImpl impl = new BloomFilterImpl(500, 0.000000001f);
+        impl.add(new byte[]{5, 3, 2, 7});
+        impl.add(new byte[]{5, 3, 0});
+        impl.add(new byte[]{5, 2, 7});
+        impl.add(new byte[]{5, 1, 2, 0});
         impl.add(new byte[]{5});
-        assert !impl.mightContain(new byte[]{5,5});
+        assert !impl.mightContain(new byte[]{5, 5});
         impl.writeTo(output);
 
         BloomFilterImpl impl2 = new BloomFilterImpl(new ByteArrayInputStream(output.toByteArray()));
         assert impl2.getK() == impl.getK();
         assert impl2.getP() == impl.getP();
         assert impl2.getM() == impl.getM();
-        assert impl.mightContain(new byte[]{5,3,2,7});
-        assert impl.mightContain(new byte[]{5,3,0});
-        assert impl.mightContain(new byte[]{5,2,7});
-        assert impl.mightContain(new byte[]{5,1,2,0});
+        assert impl.mightContain(new byte[]{5, 3, 2, 7});
+        assert impl.mightContain(new byte[]{5, 3, 0});
+        assert impl.mightContain(new byte[]{5, 2, 7});
+        assert impl.mightContain(new byte[]{5, 1, 2, 0});
         assert impl.mightContain(new byte[]{5});
-        assert !impl.mightContain(new byte[]{5,5});
+        assert !impl.mightContain(new byte[]{5, 5});
         assert impl.getData().length() == impl2.getData().length();
     }
 
     @Test()
-    public void testByteOutputStream() throws NoSuchAlgorithmException, IOException {
+    public void testByteOutputStream() throws FilterException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        BloomFilterImpl impl = new BloomFilterImpl(1,1);
-        impl.writeTo(output); 
+        BloomFilterImpl impl = new BloomFilterImpl(1, 1);
+        impl.writeTo(output);
         byte[] b = output.toByteArray();
         assert b.length == 24;
     }
 
 
     @Test
-    public void compareSizes()
-    {
+    public void compareSizes() throws FilterException {
         BloomFilterImpl impl = new BloomFilterImpl(1, 1);
-        BloomFilterImpl impl2 = new BloomFilterImpl(1,0.125f);
+        BloomFilterImpl impl2 = new BloomFilterImpl(1, 0.125f);
         assert impl.getData().length() == impl2.getData().length();
     }
 
@@ -151,11 +144,10 @@ public class BloomFilterUnitTest {
         this.runBloomFilterTest();
     }
 
-    private int doScans(BloomFilter filter,int scans) throws NoSuchAlgorithmException, IOException {
+    private int doScans(BloomFilter filter, int scans) throws FilterException {
         int falsePositives = 0;
-        for (int x = 1;x<scans;x++) {
-            if(filter.mightContain(ByteBuffer.allocate(4).putInt(Math.abs(x)).array()))
-            {
+        for (int x = 1; x < scans; x++) {
+            if (filter.mightContain(ByteBuffer.allocate(4).putInt(Math.abs(x)).array())) {
                 falsePositives++;
             }
         }
@@ -163,61 +155,58 @@ public class BloomFilterUnitTest {
     }
 
     @Test
-    public void testProbabilistcRate() throws NoSuchAlgorithmException, IOException
-    {
+    public void testProbabilistcRate() throws FilterException {
         int scans = 10000000;
         float propScan = 0.1f;
-        
-        BloomFilter filter = new BloomFilterImpl(100,propScan);
 
-        filter.add(new byte[]{5,1,2,3,6});
-        filter.add(new byte[]{2,1,2,3,6});
-        filter.add(new byte[]{7,1,2,3,6});
-        filter.add(new byte[]{8,1,2,3,6});
+        BloomFilter filter = new BloomFilterImpl(100, propScan);
+
+        filter.add(new byte[]{5, 1, 2, 3, 6});
+        filter.add(new byte[]{2, 1, 2, 3, 6});
+        filter.add(new byte[]{7, 1, 2, 3, 6});
+        filter.add(new byte[]{8, 1, 2, 3, 6});
 
         int falsePositives = doScans(filter, scans);
-        assert propScan>=(float)((float)falsePositives/(float)scans);
+        assert propScan >= (float) ((float) falsePositives / (float) scans);
     }
 
     @Test
-    public void testProbabilistcRate2() throws NoSuchAlgorithmException, IOException
-    {
-        int scans = 10000000;   
-        BloomFilter filter = new BloomFilterImpl(100,(byte)1,4);
+    public void testProbabilistcRate2() throws FilterException {
+        int scans = 10000000;
+        BloomFilter filter = new BloomFilterImpl(100, (byte) 1, 4);
         float propScan = filter.getP();
-        filter.add(new byte[]{5,1,2,3,6});
-        filter.add(new byte[]{2,1,2,3,6});
-        filter.add(new byte[]{7,1,2,3,6});
-        filter.add(new byte[]{8,1,2,3,6});
+        filter.add(new byte[]{5, 1, 2, 3, 6});
+        filter.add(new byte[]{2, 1, 2, 3, 6});
+        filter.add(new byte[]{7, 1, 2, 3, 6});
+        filter.add(new byte[]{8, 1, 2, 3, 6});
 
         int falsePositives = doScans(filter, scans);
-        assert propScan>=(float)((float)falsePositives/(float)scans);
+        assert propScan >= (float) ((float) falsePositives / (float) scans);
     }
 
     @Test
-    public void testProbabilistcRate3() throws NoSuchAlgorithmException, IOException
-    {
+    public void testProbabilistcRate3() throws FilterException {
         int scans = 100000;
-        float propScan = 0.00001f; 
-        int entries = 10000; 
-        BloomFilter filter = new BloomFilterImpl(entries,propScan);
+        float propScan = 0.00001f;
+        int entries = 10000;
+        BloomFilter filter = new BloomFilterImpl(entries, propScan);
         Random r = new Random();
-        for (int x=0;x<entries;x++) {
-            filter.add(new byte[]{ (byte)r.nextInt(256),
-                                   (byte)r.nextInt(256),
-                                   (byte)r.nextInt(256),
-                                   (byte)r.nextInt(256),
-                                   (byte)r.nextInt(256)});
+        for (int x = 0; x < entries; x++) {
+            filter.add(new byte[]{(byte) r.nextInt(256),
+                    (byte) r.nextInt(256),
+                    (byte) r.nextInt(256),
+                    (byte) r.nextInt(256),
+                    (byte) r.nextInt(256)});
         }
-    
+
         int falsePositives = doScans(filter, scans);
         assert filter.getK() == 17;
         assert filter.getM() == 239680;
-        assert propScan>=(float)((float)falsePositives/(float)scans);
+        assert propScan >= (float) ((float) falsePositives / (float) scans);
     }
 
     @Test
-    public void runBloomFilterTest() throws Exception {
+    public void runBloomFilterTest() throws FilterException {
         assert this.testObjects != null;
         for (int i = 0; i < this.testObjects.size(); i++) {
             System.out.printf("Current test at index : %s%n", i);
@@ -234,7 +223,7 @@ public class BloomFilterUnitTest {
         }
     }
 
-    private BloomFilterImpl createFilterForData(FilterTestData data) {
+    private BloomFilterImpl createFilterForData(FilterTestData data) throws FilterException {
         return new BloomFilterImpl(data.getDataSize(), (float) data.getP());
     }
 
@@ -246,13 +235,13 @@ public class BloomFilterUnitTest {
 
     public void calcBaseStringFromFilter(int i) {
         // get base64 from filter
-      //  String filterAsBase64 = this.getFilterAsBase64(this.bloomFilter.getBytes());
-     //  this.writeToJson((JSONObject) this.testObjects.get(i), i);
+        //  String filterAsBase64 = this.getFilterAsBase64(this.bloomFilter.getBytes());
+        //  this.writeToJson((JSONObject) this.testObjects.get(i), i);
         // store base64 in data
-      //  this.storeBase64InFile(i, filterAsBase64);
+        //  this.storeBase64InFile(i, filterAsBase64);
     }
 
-    public void filterLookupTest(FilterTestData testData, int index) throws Exception {
+    public void filterLookupTest(FilterTestData testData, int index) throws FilterException {
         this.lookupFilter(testData, index);
     }
 /*
@@ -281,7 +270,7 @@ public class BloomFilterUnitTest {
      * Checks if all bits written in the testData.written array can be found in the filter.
      * Each element that actually exists will be set int he testData.exists array
      */
-    private void lookupFilter(FilterTestData testData, int index) throws Exception {
+    private void lookupFilter(FilterTestData testData, int index) throws FilterException {
         int exists[] = new int[testData.getDataSize()];
         for (int i = 0; i < testData.getDataSize(); i++) {
             // iterate over all testdata
@@ -351,7 +340,7 @@ public class BloomFilterUnitTest {
     }
 
     private void printTsiFilterBits() {
-      // System.out.println(this.bloomFilter.getBytes().toString());
+        // System.out.println(this.bloomFilter.getBytes().toString());
     }
 
     private void addToTsiBloomFilter(FilterTestData data) {
@@ -362,7 +351,7 @@ public class BloomFilterUnitTest {
                     this.bloomFilter.add(data.getData().get(i).toString().getBytes(StandardCharsets.UTF_8));
                 }
             }
-        } catch (NoSuchAlgorithmException | IOException e) {
+        } catch (FilterException e) {
             e.printStackTrace();
         }
     }
