@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import CryptoKit
+import CommonCrypto
 
 public class BloomFilter<T> {
 	private var array: [Int32] // each element has 4 bytes: MemoryLayout<Int32>.size == 4 Bytes;
@@ -72,7 +74,7 @@ public class BloomFilter<T> {
 		self.array = Array(repeating: 0, count: size)
 	}
 	
-	public class func add(element: [Bool]) {
+	public class func add(element: [UInt8]) {
 		
 	}
 	
@@ -80,10 +82,30 @@ public class BloomFilter<T> {
 		return false;
 	}
 	
-	public class func hash() -> String {
+	public class func hash(bytes: [UInt8]) throws -> String {
+		if let data = String(bytes: bytes, encoding: .utf8) {
+			let hashed = data.sha1(seed: 1);
+			
+		} else {
+			throw FilterError.invalidEncoding
+		}
 		return "hash"
 	}
 	
+}
+
+extension String {
+	func sha1(seed s: Int32) -> String {
+		let toHash = self + String(s)
+		let data = Data(toHash.utf8)
+		
+		var digest = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
+		data.withUnsafeBytes {
+			_ = CC_SHA1($0.baseAddress, CC_LONG(data.count), &digest)
+		}
+		let hexBytes = digest.map { String(format: "%02hhx", $0) }
+		return hexBytes.joined()
+	}
 }
 
 /// REGION: Utility

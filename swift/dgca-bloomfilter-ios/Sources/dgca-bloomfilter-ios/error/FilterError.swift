@@ -11,5 +11,6 @@ enum FilterError: Error {
 	case invalidParameters
 	case invalidSize
 	case notEnoughMemory
+	case invalidEncoding
 	case unknownError
 }
