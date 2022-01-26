@@ -11,7 +11,7 @@ import CommonCrypto
 
 
 public class BloomFilter<T> {
-	private var array: [Int32] // each element has 4 bytes: MemoryLayout<Int32>.size == 4 Bytes;
+	private var array: [UInt32] // each element has 4 bytes: MemoryLayout<Int32>.size == 4 Bytes;
 	
 	/**
 	 n -> number of items in the filter   (n = ceil(m / (-k / log(1 - exp(log(p) / k)))))
@@ -32,9 +32,9 @@ public class BloomFilter<T> {
 	private var definedElementAmount: Int;
 	
 	// CONST
-	private let NUM_BYTES = MemoryLayout<Int32>.size; // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
+	private let NUM_BYTES = MemoryLayout<UInt32>.size; // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
 	private let NUM_BITS: Int = 8; // number of bits to use for one byte
-	private let NUM_FORMAT = (MemoryLayout<Int32>.size * 8)
+	private let NUM_FORMAT = (MemoryLayout<UInt32>.size * 8)
 
 	
 	public init(size m: Int, nHash k: Int, numElems n: Int) throws {
@@ -85,43 +85,41 @@ public class BloomFilter<T> {
 		self.array = Array(repeating: 0, count: size)
 	}
 	
-	public class func add(element: [UInt8]) {
+	public func add(element: [UInt8]) throws {
 		for i in 0..<self.numberOfHashes {
 			var index = self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
 			let bytePos = index / self.NUM_FORMAT
 			index -= bytePos * NUM_FORMAT
-			let pattern = UInt.min >> index - 1
+			let pattern = UInt32.min >> index - 1
 			self.array[bytePos] = self.array[bytePos] | pattern;
 		}
-		currentElementAmount++;
+		currentElementAmount += 1;
 		
 		if currentElementAmount >= definedElementAmount {
 			throw FilterError.filledFilter
 		}
 	}
 	
-	public class func mightContain() -> Bool {
+	public func mightContain(element: [UInt8]) -> Bool {
 		var result = true
 		for i in 0..<self.numberOfHashes {
 			var index = self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
 			let bytePos = index / self.NUM_FORMAT
 			index -= bytePos * NUM_FORMAT
-			let pattern = UInt.min >> index - 1
+			let pattern = UInt32.min >> index - 1
 			if (self.array[bytePos] & pattern) == pattern {
-				result &= true
+				result = result && true
 			} else {
-				result &= false
+				result = result && false
 				break
 			}
 		}
 		return result;
 	}
 
-	private class func calcIndex(element: [UInt8], index: Int, numberOfBits: Int) -> UInt64 {
-		guard let hashSource = self.hash(element, HashFunctions.SHA512, seed: index) else {
-			throw FilterError.hashError
-		}
-		return hashSource % numberOfBits;
+	private func calcIndex(element: [UInt8], index: Int, numberOfBits: Int) -> Int {
+		let hashSource = BloomFilter.hash(nil, element, hashFunction: HashFunctions.SHA512, seed: index)
+		return hashSource % numberOfBits
 	}
 	
 }

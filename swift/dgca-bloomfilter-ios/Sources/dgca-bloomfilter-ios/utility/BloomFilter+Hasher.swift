@@ -13,7 +13,7 @@ extension BloomFilter {
 	/**
 	 Takes either a string or a byte array and hashes it with the given hashFunction
 	 */
-	public class func hash(_ string: String?, _ bytes: [UInt8]?, hashFunction: HashFunctions, seed: Int) -> Data {
+	public class func hash(_ string: String?, _ bytes: [UInt8]?, hashFunction: HashFunctions, seed: Int) -> Int {
 		// set the length of hash function first
 		let length: Int
 		let messageData, var digestData: Data
@@ -68,7 +68,10 @@ extension BloomFilter {
 				return 0
 			}
 		}
-		return digestData
+		return digestData.data.withUnsafeBytes({
+			(rawPtr: UnsafeRawBufferPointer) in
+			return rawPtr.load(as: Int32.self)
+		})
 	}
 }
 
