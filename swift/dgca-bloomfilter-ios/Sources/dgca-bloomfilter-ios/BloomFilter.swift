@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CryptoKit
 import CommonCrypto
 
 
@@ -21,20 +20,20 @@ public class BloomFilter<T> {
 	 */
 	
 	// private var byteSize: Int;
-	private var probRate: Float;
+	private var probRate: Float = 0.0;
 
 	private let DATA_OFFSET: Int = 6;
 	
 	private var numberOfHashes: Int;
 	private var numBits: Int;
 	
-	private var currentElementAmount: Int;
+	private var currentElementAmount: Int = 0;
 	private var definedElementAmount: Int;
 	
 	// CONST
 	private let NUM_BYTES = MemoryLayout<UInt32>.size; // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
-	private let NUM_BITS: Int = 8; // number of bits to use for one byte
-	private let NUM_FORMAT = (MemoryLayout<UInt32>.size * 8)
+	private let NUM_BITS: Int32 = 8; // number of bits to use for one byte
+	private let NUM_FORMAT: Int = (MemoryLayout<Int32>.size * 8)
 
 	
 	public init(size m: Int, nHash k: Int, numElems n: Int) throws {
@@ -52,7 +51,7 @@ public class BloomFilter<T> {
 		if self.numberOfHashes > Int32.max {
 			throw FilterError.tooManyHashRounds
 		}
-		self.probRate = pow(1 - exp(Float(-k) / (Float)(self.numBits / NUM_BITS) / Float(n)), Float(k))
+		self.probRate = pow(1 - exp(Float(-k) / (Float)(self.numBits / Int(NUM_BITS)) / Float(n)), Float(k))
 		self.definedElementAmount = n
 		self.array = Array(repeating: 0, count: size)
 	}
@@ -63,7 +62,7 @@ public class BloomFilter<T> {
 		}
 		self.numBits = Int(ceil((Float(n) * log(p)) / log(1 / pow(2, log(2)))))
 		
-		let bytes: Int = (self.numBits / NUM_BITS) + 1
+		let bytes: Int = (self.numBits / Int(NUM_BITS)) + 1
 		let size: Int = (bytes / NUM_BYTES) + (bytes % NUM_BYTES)
 		self.numBits = size * NUM_FORMAT
 		if (size <= 0) {
@@ -87,7 +86,7 @@ public class BloomFilter<T> {
 	
 	public func add(element: [UInt8]) throws {
 		for i in 0..<self.numberOfHashes {
-			var index = self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
+			var index = try self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
 			let bytePos = index / self.NUM_FORMAT
 			index -= bytePos * NUM_FORMAT
 			let pattern = UInt32.min >> index - 1
@@ -100,11 +99,11 @@ public class BloomFilter<T> {
 		}
 	}
 	
-	public func mightContain(element: [UInt8]) -> Bool {
+	public func mightContain(element: [UInt8]) throws -> Bool {
 		var result = true
 		for i in 0..<self.numberOfHashes {
-			var index = self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
-			let bytePos = index / self.NUM_FORMAT
+			var index = try self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
+			let bytePos: Int = index / self.NUM_FORMAT
 			index -= bytePos * NUM_FORMAT
 			let pattern = UInt32.min >> index - 1
 			if (self.array[bytePos] & pattern) == pattern {
@@ -117,8 +116,8 @@ public class BloomFilter<T> {
 		return result;
 	}
 
-	private func calcIndex(element: [UInt8], index: Int, numberOfBits: Int) -> Int {
-		let hashSource = BloomFilter.hash(nil, element, hashFunction: HashFunctions.SHA512, seed: index)
+	private func calcIndex(element: [UInt8], index: Int, numberOfBits: Int) throws -> Int {
+		let hashSource = try BloomFilter.hash(nil, element, hashFunction: HashFunctions.SHA512, seed: index)
 		return hashSource % numberOfBits
 	}
 	

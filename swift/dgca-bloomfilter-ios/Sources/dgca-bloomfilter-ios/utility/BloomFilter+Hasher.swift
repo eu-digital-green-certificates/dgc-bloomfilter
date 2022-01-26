@@ -6,55 +6,49 @@
 //
 
 import Foundation
-import CryptoKit
 import CommonCrypto
 
 extension BloomFilter {
 	/**
 	 Takes either a string or a byte array and hashes it with the given hashFunction
 	 */
-	public class func hash(_ string: String?, _ bytes: [UInt8]?, hashFunction: HashFunctions, seed: Int) -> Int {
+	public class func hash(_ string: String?, _ bytes: [UInt8]?, hashFunction: HashFunctions, seed: Int) throws -> Int {
 		// set the length of hash function first
 		let length: Int
-		let messageData, var digestData: Data
+		var messageData: Data = Data()
+		var digestData: Data
 		
 		switch hashFunction {
 		case .SHA512:
-			length = CC_SHA256_DIGEST_LENGTH
+			length = Int(CC_SHA256_DIGEST_LENGTH)
 		case .MD5:
-			length = CC_MD5_DIGEST_LENGTH
-		default:
-			throw FilterError.unsupportedCryptoFunction
+			length = Int(CC_MD5_DIGEST_LENGTH)
+		
 		}
 		
-		let stringSource: String;
+		var stringSource: String = "";
 		
-		if string != null {
-			guard stringSource = string + String(seed) else {
-				throw FilterError.unknownError
-			}
+		if string != nil {
+			stringSource = string! + String(seed)
 		}
 		
-		if bytes != null {
+		if bytes != nil {
 			// concat with bigEndian
-			guard let indexArray = withUnsafeBytes(of: seed.bigEndian, Array.init) else {
-				throw FilterError.hashError
-			}
-			if let concatBytes = bytes!.append(contentsOf: indexArray) {
-				guard stringSource = String(data: concatBytes, encoding: .utf8) else {
-					throw FilterError.invalidEncoding
-				}
+			let indexArray = withUnsafeBytes(of: seed.bigEndian, Array.init)
+			var concatBytes = bytes!;
+			concatBytes.append(contentsOf: indexArray)
+			if let s = String(data: Data(concatBytes), encoding: .utf8) {
+				stringSource = s
 			}
 		}
-		
-		guard stringSource != null else {
-			throw FilterError.unknownError
+		if stringSource == "" { throw FilterError.unknownError }
+		if let s = stringSource.data(using: .utf8) {
+			messageData = s
 		}
 		
-		messageData = stringSource.data(using: .utf8)
 		digestData = Data(count: length)
 		
-		_ = digestData.withUnsafeMutableBytes { digestBytes -> UInt8 in
+		_ = digestData.withUnsafeMutableBytes ({ digestBytes -> UInt8 in
 			messageData.withUnsafeBytes { messageBytes -> UInt8 in
 				if let messageBytesBaseAddress = messageBytes.baseAddress, let digestBytesBlindMemory = digestBytes.bindMemory(to: UInt8.self).baseAddress {
 					let messageLength = CC_LONG(messageData.count)
@@ -67,15 +61,13 @@ extension BloomFilter {
 				}
 				return 0
 			}
-		}
-		return digestData.data.withUnsafeBytes({
-			(rawPtr: UnsafeRawBufferPointer) in
-			return rawPtr.load(as: Int32.self)
 		})
+		
+		return 1;
 	}
 }
 
-enum HashFunctions {
+public enum HashFunctions {
 	case SHA512
 	case MD5
 }
