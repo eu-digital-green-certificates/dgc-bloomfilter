@@ -13,7 +13,7 @@ extension BloomFilter {
 	/**
 	 Takes either a string or a byte array and hashes it with the given hashFunction
 	 */
-	func hash(string: String?, bytes: [UInt8]?, hashFunction: HashFunctions) -> Data {
+	public class func hash(_ string: String?, _ bytes: [UInt8]?, hashFunction: HashFunctions, seed: Int) -> Data {
 		// set the length of hash function first
 		let length: Int
 		let messageData, var digestData: Data
@@ -30,14 +30,20 @@ extension BloomFilter {
 		let stringSource: String;
 		
 		if string != null {
-			guard stringSource = string else {
+			guard stringSource = string + String(seed) else {
 				throw FilterError.unknownError
 			}
 		}
 		
 		if bytes != null {
-			guard stringSource = String(data: bytes, encoding: .utf8) else {
-				throw FilterError.invalidEncoding
+			// concat with bigEndian
+			guard let indexArray = withUnsafeBytes(of: seed.bigEndian, Array.init) else {
+				throw FilterError.hashError
+			}
+			if let concatBytes = bytes!.append(contentsOf: indexArray) {
+				guard stringSource = String(data: concatBytes, encoding: .utf8) else {
+					throw FilterError.invalidEncoding
+				}
 			}
 		}
 		

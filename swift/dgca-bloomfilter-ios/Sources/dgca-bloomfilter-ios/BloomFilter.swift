@@ -28,6 +28,9 @@ public class BloomFilter<T> {
 	private var numberOfHashes: Int;
 	private var numBits: Int;
 	
+	private var currentElementAmount: Int;
+	private var definedElementAmount: Int;
+	
 	// CONST
 	private let NUM_BYTES = MemoryLayout<Int32>.size; // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
 	private let NUM_BITS: Int = 8; // number of bits to use for one byte
@@ -46,7 +49,11 @@ public class BloomFilter<T> {
 		}
 		self.numBits = size * NUM_FORMAT
 		self.numberOfHashes = k
+		if self.numberOfHashes > Int32.max {
+			throw FilterError.tooManyHashRounds
+		}
 		self.probRate = pow(1 - exp(Float(-k) / (Float)(self.numBits / NUM_BITS) / Float(n)), Float(k))
+		self.definedElementAmount = n
 		self.array = Array(repeating: 0, count: size)
 	}
 	
@@ -70,22 +77,51 @@ public class BloomFilter<T> {
 		
 		// self.numberOfHashes = Int(max(1, round(Float(self.numBits) / Float(n) * log(2))Float(self.numBits))
 		self.numberOfHashes = Int(max(1, round(Float(self.numBits) / Float(n) * log(2))))
-		/// TODO: Too many hashes error
+		if self.numberOfHashes > Int32.max {
+			throw FilterError.tooManyHashRounds
+		}
 		self.probRate = p
+		self.definedElementAmount = n
 		self.array = Array(repeating: 0, count: size)
 	}
 	
 	public class func add(element: [UInt8]) {
+		for i in 0..<self.numberOfHashes {
+			var index = self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
+			let bytePos = index / self.NUM_FORMAT
+			index -= bytePos * NUM_FORMAT
+			let pattern = UInt.min >> index - 1
+			self.array[bytePos] = self.array[bytePos] | pattern;
+		}
+		currentElementAmount++;
 		
+		if currentElementAmount >= definedElementAmount {
+			throw FilterError.filledFilter
+		}
 	}
 	
 	public class func mightContain() -> Bool {
-		return false;
+		var result = true
+		for i in 0..<self.numberOfHashes {
+			var index = self.calcIndex(element: element, index: i, numberOfBits: self.numBits)
+			let bytePos = index / self.NUM_FORMAT
+			index -= bytePos * NUM_FORMAT
+			let pattern = UInt.min >> index - 1
+			if (self.array[bytePos] & pattern) == pattern {
+				result &= true
+			} else {
+				result &= false
+				break
+			}
+		}
+		return result;
 	}
-	
-	public class func hash(bytes: [UInt8], withHash hashFunction: HashFunction) throws -> String {
-							
-		return "hash"
+
+	private class func calcIndex(element: [UInt8], index: Int, numberOfBits: Int) -> UInt64 {
+		guard let hashSource = self.hash(element, HashFunctions.SHA512, seed: index) else {
+			throw FilterError.hashError
+		}
+		return hashSource % numberOfBits;
 	}
 	
 }

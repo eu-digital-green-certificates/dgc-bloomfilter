@@ -14,4 +14,7 @@ enum FilterError: Error {
 	case invalidEncoding
 	case unknownError
 	case unsupportedCryptoFunction
+	case hashError
+	case filledFilter
+	case tooManyHashRounds
 }
