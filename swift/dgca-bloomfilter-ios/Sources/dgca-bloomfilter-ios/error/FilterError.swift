@@ -13,4 +13,5 @@ enum FilterError: Error {
 	case notEnoughMemory
 	case invalidEncoding
 	case unknownError
+	case unsupportedCryptoFunction
 }
