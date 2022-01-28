@@ -23,7 +23,7 @@ public class BloomFilter<T> {
 	private var probRate: Float = 0.0;
 
 	private let DATA_OFFSET: Int = 6;
-	
+
 	private var numberOfHashes: Int;
 	private var numBits: Int;
 	
