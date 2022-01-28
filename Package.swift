@@ -20,6 +20,7 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "dgca-bloomfilter-ios",
+            path: "swift/dgca-bloomfilter-ios/Sources",
             dependencies: []),
         .testTarget(
             name: "dgca-bloomfilter-iosTests",
