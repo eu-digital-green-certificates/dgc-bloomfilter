@@ -20,7 +20,7 @@ public class BloomFilter<T> {
 	 */
 	
 	// private var byteSize: Int;
-	private var probRate: Float = 0.0;
+	private var probRate: Double = 0.0;
 
 	private let DATA_OFFSET: Int = 6;
 
@@ -30,11 +30,13 @@ public class BloomFilter<T> {
 	private var currentElementAmount: Int = 0;
 	private var definedElementAmount: Int;
 	
+	private var usedHashFunction: UInt8 = 0;
+	
 	// CONST
 	private let NUM_BYTES = MemoryLayout<UInt32>.size; // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
 	private let NUM_BITS: Int32 = 8; // number of bits to use for one byte
 	private let NUM_FORMAT: Int = (MemoryLayout<Int32>.size * 8)
-
+	private var VERSION: Int64 = 7526472295622776147;
 	
 	public init(size m: Int, nHash k: Int, numElems n: Int) throws {
 		if (m <= 0 || k <= 0 || n <= 0) {
@@ -51,16 +53,16 @@ public class BloomFilter<T> {
 		if self.numberOfHashes > Int32.max {
 			throw FilterError.tooManyHashRounds
 		}
-		self.probRate = pow(1 - exp(Float(-k) / (Float)(self.numBits / Int(NUM_BITS)) / Float(n)), Float(k))
+		self.probRate = BloomFilter<T>.calcProbValue(numBits: numBits, numberOfElements: n, numberOfHashes: k)
 		self.definedElementAmount = n
 		self.array = Array(repeating: 0, count: size)
 	}
 	
-	public init(numElems n: Int, probRate p: Float) throws {
+	public init(numElems n: Int, probRate p: Double) throws {
 		if (n == 0 || p == 0) {
 			throw FilterError.invalidParameters
 		}
-		self.numBits = Int(ceil((Float(n) * log(p)) / log(1 / pow(2, log(2)))))
+		self.numBits = BloomFilter<T>.calcMValue(n: n, p: p)
 		
 		let bytes: Int = (self.numBits / Int(NUM_BITS)) + 1
 		let size: Int = (bytes / NUM_BYTES) + (bytes % NUM_BYTES)
@@ -75,7 +77,7 @@ public class BloomFilter<T> {
 		}
 		
 		// self.numberOfHashes = Int(max(1, round(Float(self.numBits) / Float(n) * log(2))Float(self.numBits))
-		self.numberOfHashes = Int(max(1, round(Float(self.numBits) / Float(n) * log(2))))
+		self.numberOfHashes = BloomFilter<T>.calcKValue(m: numBits, n: n)
 		if self.numberOfHashes > Int32.max {
 			throw FilterError.tooManyHashRounds
 		}
@@ -121,44 +123,95 @@ public class BloomFilter<T> {
 		return hashSource % numberOfBits
 	}
 	
+	public func readFrom(stream: InputStream) throws {
+		let metaLength = 20, dataLengthOffset = 16
+		let byteLength = 1, shortLength = 2, doubleLength = 8;
+		// read meta data first
+		let metaData = try stream.readData(withLength: metaLength)
+
+		// get the data length from the metaData
+		let dataLength: Int = metaData.subdata(in: Range(dataLengthOffset...metaLength)).withUnsafeBytes {
+			$0.load(as: Int.self)
+		}
+		// now read all data from stream that is array
+		let dataStream = try stream.readData(withLength: metaLength + dataLength)
+		
+		let arrayData = dataStream.subdata(in: Range(metaLength...dataLength)).withUnsafeBytes {
+			$0.load(as: [UInt32].self)
+		}
+		// get all data we need from metaData and from arrayData
+		let rangePtr: ClosedRange<Int> = (0...shortLength)
+		
+		let version = metaData.subdata(in: Range(rangePtr)).withUnsafeBytes {
+			$0.load(as: Int64.self)
+		}
+		
+		let usedHashFunction = metaData.subdata(in: Range(rangePtr)).withUnsafeBytes {
+			$0.load(as: UInt8.self)
+		}
+		
+		let numberOfHashes = metaData.subdata(in: Range(rangePtr.shiftRange(by: byteLength))).withUnsafeBytes {
+			$0.load(as: Int.self)
+		}
+		
+		let probRate = metaData.subdata(in: Range(rangePtr.shiftRange(by: doubleLength))).withUnsafeBytes {
+			$0.load(as: Double.self)
+		}
+		
+		let definedElementAmount = metaData.subdata(in: Range(rangePtr.shiftRange(by: doubleLength))).withUnsafeBytes {
+			$0.load(as: Int.self)
+		}
+		
+		let currentElementAmount = metaData.subdata(in: Range(rangePtr.shiftRange(by: doubleLength))).withUnsafeBytes {
+			$0.load(as: Int.self)
+		}
+		// done reading all data needed
+		self.VERSION = version
+		self.usedHashFunction = usedHashFunction
+		self.numberOfHashes = numberOfHashes
+		self.probRate = probRate
+		self.definedElementAmount = definedElementAmount
+		self.currentElementAmount = currentElementAmount
+		// self.array = arrayData
+		self.array = Array(repeating: 0, count: dataLength)
+		for index in 0..<dataLength {
+			self.array[index] = arrayData[index]
+		}
+		// data stored. done.
+		
+	}
+	
 }
 
-extension String {
-	func sha1(seed s: Int32) -> String {
-		let toHash = self + String(s)
-		let data = Data(toHash.utf8)
-		var digest = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
-		data.withUnsafeBytes {
-			_ = CC_SHA1($0.baseAddress, CC_LONG(data.count), &digest)
-		}
-		let hexBytes = digest.map { String(format: "%02hhx", $0) }
-		return hexBytes.joined()
+extension ClosedRange where Bound == Int {
+	public func shiftRange(by offset: Int) -> ClosedRange<Int> {
+		let lowerBound = self.upperBound
+		let upperBound = self.upperBound + offset
+		return (lowerBound...upperBound)
 	}
 }
 
+
 /// REGION: Utility
 extension BloomFilter {
-	class func calcNValue(m: Int, k: Int, p: Float) -> Int {
+	/*
+	public func calcNValue(m: Int, k: Int, p: Double) -> Int {
 		let x = log(1 - exp(log(p) / Float(k)))
 		let f = Double(m / (-k / Int(x)))
 		return Int(ceil(f))
 	}
+	 */
 	
-	class func calcProbValue(byteCount m: Int, numberOfElements n: Int, numberOfHashes k: Int) -> Float {
-		let f = Double(-k / (m / n))
-		let x = exp(f)
-		return Float(pow(1 - x, Double(k)))
+	public class func calcProbValue(numBits: Int, numberOfElements n: Int, numberOfHashes k: Int) -> Double {
+		return Double(pow(1 - exp(Float(-k) / (Float)(numBits / 8) / Float(n)), Float(k)))
 	}
 	
-	class func calcMValue(n: Int, p: Float) -> Int {
-		// m = ceil((n * log(p)) / log(1 / pow(2, log(2))));)
-		let x = (Float(n) * log(p))
-		return Int(ceil(x / log(1 / pow(2, log(2)))))
+	public class func calcMValue(n: Int, p: Double) -> Int {
+		return Int(ceil((Double(n) * log(p)) / log(1 / pow(2, log(2)))))
 	}
 	
-	class func calcKValue(m: Int, n: Int) -> Int {
-		// k = round((m / n) * log(2))
-		return Int(round(Float((m / n)) * log(2)))
+	public class func calcKValue(m: Int, n: Int) -> Int {
+		return Int(max(1, round(Float(m) / Float(n) * log(2))))
 	}
 }
 /// ENDREGION
