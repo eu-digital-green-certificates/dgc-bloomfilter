@@ -5,13 +5,11 @@
 
 import exception.FilterException;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
 
 public interface BloomFilter {
-    float    getP();
+    double getP();
     int     getK();
     long    getM();
     int     getN();
