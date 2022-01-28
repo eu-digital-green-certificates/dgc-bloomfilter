@@ -192,8 +192,8 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     private void readFromStream(DataInputStream dis) {
         try {
             int version = dis.readShort(); // for later compatibility
-            this.numberOfHashes = dis.readByte();
             this.usedHashFunction = dis.readByte();
+            this.numberOfHashes = dis.readByte();
             this.probRate = dis.readFloat();
             this.definedElementAmount = dis.readInt();
             this.currentElementAmount = dis.readInt();
