@@ -4,7 +4,6 @@
  */
 
 import exception.FilterException;
-import exception.FilterExceptionsTypes;
 import model.FilterTestData;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -20,7 +19,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLongArray;
 
@@ -174,7 +172,7 @@ public class BloomFilterUnitTest {
     public void testProbabilistcRate2() throws FilterException {
         int scans = 10000000;
         BloomFilter filter = new BloomFilterImpl(100, (byte) 1, 4);
-        float propScan = filter.getP();
+        double propScan = filter.getP();
         filter.add(new byte[]{5, 1, 2, 3, 6});
         filter.add(new byte[]{2, 1, 2, 3, 6});
         filter.add(new byte[]{7, 1, 2, 3, 6});
