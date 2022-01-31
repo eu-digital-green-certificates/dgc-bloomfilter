@@ -19,6 +19,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLongArray;
 
@@ -30,7 +31,7 @@ public class BloomFilterUnitTest {
     private FilterTestData filterTestData = null;
 
     @Test
-    public void runBasicBloom() throws FilterException {
+    public void runBasicBloom() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(1, (byte) 1, 1);
         impl.add(new byte[]{0, 5, 33, 44});
         assert impl.mightContain(new byte[]{0, 5, 33, 44});
@@ -39,7 +40,7 @@ public class BloomFilterUnitTest {
     }
 
     @Test
-    public void runDifferentByteSizeBlock() throws FilterException {
+    public void runDifferentByteSizeBlock() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(8, (byte) 1, 1);
         impl.add(new byte[]{0, 5, 33, 44});
 
@@ -56,18 +57,18 @@ public class BloomFilterUnitTest {
         assert impl.getData().get(1) == longArray.get(0);
     }
 
-    @Test(expected = FilterException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testMaxValues() throws FilterException {
         BloomFilterImpl impl = new BloomFilterImpl(Integer.MAX_VALUE, (byte) 1, 1);
     }
 
-    @Test(expected = FilterException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testMinValues() throws FilterException {
         BloomFilterImpl impl = new BloomFilterImpl(Integer.MIN_VALUE, (byte) 1, 1);
     }
 
     @Test()
-    public void testNormalValues() throws FilterException {
+    public void testNormalValues() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(56049, (byte) 20, 1);
         impl.add(new byte[]{0, 9, 44});
         assert impl.mightContain(new byte[]{0, 9, 44});
@@ -78,23 +79,23 @@ public class BloomFilterUnitTest {
         BloomFilterImpl impl = new BloomFilterImpl(30000000, 0.1f); //ca. 30M per Filter
     }
 
-    @Test(expected = FilterException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testMaxElementSize() throws FilterException {
         BloomFilterImpl impl = new BloomFilterImpl(30000000, 0.0000000001f); //ca. 30M per Filter
     }
 
-    @Test(expected = FilterException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testMinElementSize() throws FilterException {
         BloomFilterImpl impl = new BloomFilterImpl(0, 0.0000000001f);
     }
 
-    @Test(expected = FilterException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testNegativeElementSize() throws FilterException {
         BloomFilterImpl impl = new BloomFilterImpl(-1, 0.0000000001f);
     }
 
     @Test()
-    public void testByteStream() throws FilterException {
+    public void testByteStream() throws FilterException,IOException,NoSuchAlgorithmException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         BloomFilterImpl impl = new BloomFilterImpl(500, 0.000000001f);
         impl.add(new byte[]{5, 3, 2, 7});
@@ -119,7 +120,7 @@ public class BloomFilterUnitTest {
     }
 
     @Test()
-    public void testByteOutputStream() throws FilterException {
+    public void testByteOutputStream() throws FilterException,IOException,NoSuchAlgorithmException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         BloomFilterImpl impl = new BloomFilterImpl(1, 1);
         impl.writeTo(output);
@@ -129,7 +130,7 @@ public class BloomFilterUnitTest {
 
 
     @Test
-    public void compareSizes() throws FilterException {
+    public void compareSizes() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(1, 1);
         BloomFilterImpl impl2 = new BloomFilterImpl(1, 0.125f);
         assert impl.getData().length() == impl2.getData().length();
@@ -142,7 +143,7 @@ public class BloomFilterUnitTest {
         this.runBloomFilterTest();
     }
 
-    private int doScans(BloomFilter filter, int scans) throws FilterException {
+    private int doScans(BloomFilter filter, int scans) throws FilterException,IOException,NoSuchAlgorithmException {
         int falsePositives = 0;
         for (int x = 1; x < scans; x++) {
             if (filter.mightContain(ByteBuffer.allocate(4).putInt(Math.abs(x)).array())) {
@@ -153,7 +154,7 @@ public class BloomFilterUnitTest {
     }
 
     @Test
-    public void testProbabilistcRate() throws FilterException {
+    public void testProbabilistcRate() throws FilterException,IOException,NoSuchAlgorithmException {
         int scans = 10000000;
         float propScan = 0.1f;
 
@@ -169,7 +170,7 @@ public class BloomFilterUnitTest {
     }
 
     @Test
-    public void testProbabilistcRate2() throws FilterException {
+    public void testProbabilistcRate2() throws FilterException,IOException,NoSuchAlgorithmException {
         int scans = 10000000;
         BloomFilter filter = new BloomFilterImpl(100, (byte) 1, 4);
         double propScan = filter.getP();
@@ -183,7 +184,7 @@ public class BloomFilterUnitTest {
     }
 
     @Test
-    public void testProbabilistcRate3() throws FilterException {
+    public void testProbabilistcRate3() throws FilterException,IOException,NoSuchAlgorithmException {
         int scans = 100000;
         float propScan = 0.00001f;
         int entries = 10000;
@@ -204,7 +205,7 @@ public class BloomFilterUnitTest {
     }
 
     @Test
-    public void runBloomFilterTest() throws FilterException {
+    public void runBloomFilterTest() throws FilterException, IOException, NoSuchAlgorithmException {
         assert this.testObjects != null;
         for (int i = 0; i < this.testObjects.size(); i++) {
             System.out.printf("Current test at index : %s%n", i);
@@ -221,11 +222,11 @@ public class BloomFilterUnitTest {
         }
     }
 
-    private BloomFilterImpl createFilterForData(FilterTestData data) throws FilterException {
+    private BloomFilterImpl createFilterForData(FilterTestData data) throws FilterException, IOException, NoSuchAlgorithmException {
         return new BloomFilterImpl(data.getDataSize(), (float) data.getP());
     }
 
-    public void storeDataInFilter(int i) {
+    public void storeDataInFilter(int i) throws FilterException, IOException, NoSuchAlgorithmException {
         assert this.bloomFilter != null;
         FilterTestData testData = this.extractTestData(i);
         this.addToTsiBloomFilter(testData);
@@ -239,7 +240,7 @@ public class BloomFilterUnitTest {
         //  this.storeBase64InFile(i, filterAsBase64);
     }
 
-    public void filterLookupTest(FilterTestData testData, int index) throws FilterException {
+    public void filterLookupTest(FilterTestData testData, int index) throws FilterException, NoSuchAlgorithmException, IOException {
         this.lookupFilter(testData, index);
     }
 /*
@@ -268,7 +269,7 @@ public class BloomFilterUnitTest {
      * Checks if all bits written in the testData.written array can be found in the filter.
      * Each element that actually exists will be set int he testData.exists array
      */
-    private void lookupFilter(FilterTestData testData, int index) throws FilterException {
+    private void lookupFilter(FilterTestData testData, int index) throws FilterException,IOException,NoSuchAlgorithmException {
         int exists[] = new int[testData.getDataSize()];
         for (int i = 0; i < testData.getDataSize(); i++) {
             // iterate over all testdata
@@ -341,7 +342,7 @@ public class BloomFilterUnitTest {
         // System.out.println(this.bloomFilter.getBytes().toString());
     }
 
-    private void addToTsiBloomFilter(FilterTestData data) {
+    private void addToTsiBloomFilter(FilterTestData data) throws FilterException,IOException,NoSuchAlgorithmException {
         try {
             for (int i = 0; i < data.getDataSize(); i++) {
                 // only add elements where written is set to 1 at given index i
