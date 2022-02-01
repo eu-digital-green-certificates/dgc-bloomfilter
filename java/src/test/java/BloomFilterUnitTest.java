@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -31,9 +32,20 @@ public class BloomFilterUnitTest {
     private FilterTestData filterTestData = null;
 
     @Test
+    public void testBigInteger() throws FilterException,IOException,NoSuchAlgorithmException
+    {
+       BigInteger val = BloomFilterImpl.calcIndex(new byte[]{11}, 1, 100);
+       assert val.intValue() == 75;
+
+       val = BloomFilterImpl.calcIndex(new byte[]{1}, 1, 1);
+       assert val.intValue() == 0;
+    }
+
+    @Test
     public void runBasicBloom() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(1, (byte) 1, 1);
         impl.add(new byte[]{0, 5, 33, 44});
+        assert !impl.mightContain(new byte[]{0, 5, 88, 44});
         assert impl.mightContain(new byte[]{0, 5, 33, 44});
         assert impl.getData().length() == 1;
         assert impl.getData().get(0) == (Integer.MIN_VALUE >>> 25);
@@ -49,7 +61,7 @@ public class BloomFilterUnitTest {
 
         AtomicLongArray longArray = new AtomicLongArray(size);
 
-        int index = impl.calcIndex(new byte[]{0, 5, 33, 44}, 0, numBits).intValue();
+        int index = BloomFilterImpl.calcIndex(new byte[]{0, 5, 33, 44}, 0, numBits).intValue();
         int bytepos = index / (Long.BYTES * 8);
         long pattern = Long.MIN_VALUE >>> index - 1;
         longArray.set(bytepos, longArray.get(bytepos) | pattern);
@@ -131,6 +143,13 @@ public class BloomFilterUnitTest {
 
     @Test
     public void compareSizes() throws FilterException,IOException,NoSuchAlgorithmException {
+        BloomFilterImpl impl = new BloomFilterImpl(1, 1);
+        BloomFilterImpl impl2 = new BloomFilterImpl(1, 0.125f);
+        assert impl.getData().length() == impl2.getData().length();
+    }
+
+    @Test
+    public void compare() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(1, 1);
         BloomFilterImpl impl2 = new BloomFilterImpl(1, 0.125f);
         assert impl.getData().length() == impl2.getData().length();
