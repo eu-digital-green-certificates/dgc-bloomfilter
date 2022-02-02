@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  BloomFilter+Hasher.swift
 //  
 //
 //  Created by Paul Ballmann on 26.01.22.
@@ -12,7 +12,7 @@ extension BloomFilter {
 	/**
 	 Takes either a string or a byte array and hashes it with the given hashFunction
 	 */
-    public class func hash(data: Data, hashFunction: HashFunctions, seed: UInt8) throws -> Data {
+    public class func hash(data: Data, hashFunction: HashFunctions, seed: UInt8) -> Data {
 
         let seedBytes = Data(withUnsafeBytes(of: seed.bigEndian, Array.init))
         
@@ -29,7 +29,7 @@ extension BloomFilter {
 }
 
 private func md5(data : NSData) -> Data {
-    return Data(); //not implemented
+    return Data() //not implemented
 }
 
 public enum HashFunctions {
