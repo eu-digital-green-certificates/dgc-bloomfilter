@@ -26,4 +26,11 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
         let hash = try BloomFilter.hash(data: Data([11]), hashFunction: HashFunctions.SHA256, seed: 1)
         XCTAssert(hash.base64EncodedString() == "G2lkA9iYJ1bCNq+8WwnA9U3QaC7lNKddxLcKXV7Quo8=" )
     }
+	
+	var testDataLoader: TestDataLoader!
+	
+	func testReadTestData() throws {
+		self.testDataLoader = try TestDataLoader()
+	}
+
 }
