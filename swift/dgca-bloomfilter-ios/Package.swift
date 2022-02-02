@@ -28,6 +28,6 @@ let package = Package(
 			resources: [
 				.process("resources/filter-test.json")
 			]
-		),
+		)
     ]
 )

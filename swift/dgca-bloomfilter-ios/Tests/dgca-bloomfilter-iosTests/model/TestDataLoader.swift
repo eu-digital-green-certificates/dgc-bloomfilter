@@ -8,7 +8,7 @@ import Foundation
 import dgca_bloomfilter_ios
 
 class TestDataLoader {
-	var testData: TestData?
+	var testData: [TestData]?
 	var testDataName = "filter-test"
 	
 	public init() throws {
@@ -20,7 +20,7 @@ class TestDataLoader {
 		}
 	}
 	
-	private func readTestData() throws -> TestData {
+	private func readTestData() throws -> [TestData] {
 		guard let rawData = readLocalTestFile(withName: self.testDataName) else {
 			throw UnitTestErrors.cannotLoadTestData
 		}
@@ -33,26 +33,21 @@ class TestDataLoader {
 	}
 	
 	private func readLocalTestFile(withName name: String) -> Data? {
-		do {
-			if let pathToFile = Bundle.module.url(forResource: name, withExtension: "json") {
-				let data = try Data(contentsOf: pathToFile)
+		if let urlPath = Bundle.module.url(forResource: "filter-test", withExtension: "json") {
+			if let data = try? Data(contentsOf: urlPath) {
 				return data
 			}
-		} catch {
-			print("error: \(error)")
 		}
 		return nil
 	}
 	
-	private func parseTestData(json: Data) -> TestData? {
+	private func parseTestData(json: Data) -> [TestData]? {
 		let decoder = JSONDecoder()
-		do {
-			let testData = try decoder.decode([TestData].self, from: json)
+		if let testData = try? decoder.decode([TestData].self, from: json) {
 			print(testData.count)
-			// return testData
-		} catch {
-			print(error)
+			return testData
 		}
+		
 		return nil
 	}
 }

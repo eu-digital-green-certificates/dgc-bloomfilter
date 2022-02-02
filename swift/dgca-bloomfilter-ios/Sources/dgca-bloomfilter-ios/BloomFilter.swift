@@ -18,24 +18,24 @@ public class BloomFilter {
 	 */
 	
 	// private var byteSize: Int;
-	private var probRate: Float = 0.0;
+	private var probRate: Float = 0.0
 
-	private let DATA_OFFSET: UInt = 6;
+	private let DATA_OFFSET: UInt = 6
 
-	private var numberOfHashes: UInt8;
-	private var numBits: UInt32;
+	private var numberOfHashes: UInt8
+	private var numBits: UInt32
 	
-	private var currentElementAmount: UInt16 = 0;
-	private var definedElementAmount: UInt16;
+	private var currentElementAmount: UInt16 = 0
+	private var definedElementAmount: UInt16
 	
-	private var usedHashFunction: UInt8 = 0;
+	private var usedHashFunction: UInt8 = 0
 	
 	// CONST
-    private let NUM_BYTES : UInt16 = UInt16(MemoryLayout<UInt16>.size); // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
-	private let NUM_BITS: UInt16 = 8; // number of bits to use for one byte
+    private let NUM_BYTES : UInt16 = UInt16(MemoryLayout<UInt16>.size) // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
+	private let NUM_BITS: UInt16 = 8 // number of bits to use for one byte
     private let NUM_FORMAT: UInt16 = UInt16((MemoryLayout<UInt32>.size * 8))
-	private var VERSION: Int64 = 7526472295622776147;
-    private var version: UInt8 = 1;
+	private var VERSION: Int64 = 7526472295622776147
+    private var version: UInt8 = 1
 	
 	public init(size m: UInt16, nHash k: UInt8, numElems n: UInt16) throws {
 		if (m <= 0 || k <= 0 || n <= 0) {
@@ -87,9 +87,9 @@ public class BloomFilter {
 	
     public func add(element: Data) throws {
 		for i in 0..<self.numberOfHashes {
-            var bytesIdx = try BloomFilter.calcIndex(element: element, index: UInt8(i), numberOfBits: self.numBits).asMagnitudeBytes()
+			let bytesIdx = try BloomFilter.calcIndex(element: element, index: UInt8(i), numberOfBits: self.numBits).asMagnitudeBytes()
             
-            let data = Data(bytes: bytesIdx)
+            let data = Data(_: bytesIdx)
             var index = UInt32(littleEndian: data.withUnsafeBytes { $0.pointee })
             
             let bytePos = index / UInt32(self.NUM_FORMAT)
@@ -101,15 +101,16 @@ public class BloomFilter {
 		
 		if currentElementAmount >= definedElementAmount {
 			//Logger necessary, no exception
+			print("BloomFilter full.")
 		}
 	}
 	
 	public func mightContain(element: Data) throws -> Bool {
 		var result = true
 		for i in 0..<self.numberOfHashes {
-            var bytesIdx = try BloomFilter.calcIndex(element: element, index: UInt8(i), numberOfBits: self.numBits).asMagnitudeBytes()
+			let bytesIdx = try BloomFilter.calcIndex(element: element, index: UInt8(i), numberOfBits: self.numBits).asMagnitudeBytes()
             
-            let data = Data(bytes: bytesIdx)
+            let data = Data(_: bytesIdx)
             var index = UInt32(littleEndian: data.withUnsafeBytes { $0.pointee })
             
             let bytePos = index / UInt32(self.NUM_FORMAT)
@@ -164,15 +165,15 @@ func >>> (lhs: Int32, rhs: UInt32) -> Int32 {
 
 public extension BloomFilter  {
     
-    public class func calcProbValue(numBits: UInt32, numberOfElements n: UInt16, numberOfHashes k: UInt8) -> Float {
+    class func calcProbValue(numBits: UInt32, numberOfElements n: UInt16, numberOfHashes k: UInt8) -> Float {
         return Float(pow(1 - exp(Float(-Int8(k)) / (Float)(numBits / 8) / Float(n)), Float(k)))
     }
     
-    public class func calcMValue(n: UInt16, p: Float) -> UInt32 {
+    class func calcMValue(n: UInt16, p: Float) -> UInt32 {
         return UInt32(ceil((Float(n) * log(p)) / log(1 / pow(2, log(2)))))
     }
     
-    public class func calcKValue(m: UInt32, n: UInt16) -> UInt8 {
+    class func calcKValue(m: UInt32, n: UInt16) -> UInt8 {
         return UInt8(max(1, round(Float(m) / Float(n) * log(2))))
     }
     
