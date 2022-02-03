@@ -105,7 +105,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
             long index = calcIndex(element, i,this.numBits).longValue();
             int bytepos = (int)index/NUM_BIT_FORMAT;
             index -= bytepos * NUM_BIT_FORMAT;
-            Integer pattern = Integer.MIN_VALUE>>>index-1;
+            Integer pattern = Integer.MIN_VALUE>>>index;
             this.data.set(bytepos,this.data.get(bytepos) | pattern);
         }
         currentElementAmount++;
@@ -122,7 +122,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
             long index = calcIndex(element, i,this.numBits).longValue();
             int bytepos = (int)index/NUM_BIT_FORMAT;
             index -= bytepos * NUM_BIT_FORMAT;
-            long pattern = Integer.MIN_VALUE>>>index-1;
+            long pattern = Integer.MIN_VALUE>>>index;
             if ((this.data.get(bytepos) & pattern) == pattern) {
                  result&=true;
             }

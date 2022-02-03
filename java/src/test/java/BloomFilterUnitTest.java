@@ -48,7 +48,7 @@ public class BloomFilterUnitTest {
         assert !impl.mightContain(new byte[]{0, 5, 88, 44});
         assert impl.mightContain(new byte[]{0, 5, 33, 44});
         assert impl.getData().length() == 1;
-        assert impl.getData().get(0) == (Integer.MIN_VALUE >>> 25);
+        assert impl.getData().get(0) == (Integer.MIN_VALUE >>> 26);
     }
 
     @Test
@@ -63,7 +63,7 @@ public class BloomFilterUnitTest {
 
         int index = BloomFilterImpl.calcIndex(new byte[]{0, 5, 33, 44}, 0, numBits).intValue();
         int bytepos = index / (Long.BYTES * 8);
-        long pattern = Long.MIN_VALUE >>> index - 1;
+        long pattern = Long.MIN_VALUE >>> index ;
         longArray.set(bytepos, longArray.get(bytepos) | pattern);
 
         assert impl.getData().get(1) == longArray.get(0);
@@ -93,7 +93,7 @@ public class BloomFilterUnitTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testMaxElementSize() throws FilterException {
-        BloomFilterImpl impl = new BloomFilterImpl(30000000, 0.0000000001f); //ca. 30M per Filter
+        BloomFilterImpl impl = new BloomFilterImpl(29900000, 0.0000000001f); //ca. 30M per Filter
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -221,6 +221,19 @@ public class BloomFilterUnitTest {
         assert filter.getK() == 17;
         assert filter.getM() == 239680;
         assert propScan >= (float) ((float) falsePositives / (float) scans);
+    }
+
+    @Test
+    public void runSmokeTest() throws NoSuchAlgorithmException,IOException, FilterException
+    {  
+        BloomFilterImpl imp = new BloomFilterImpl(1000000, 0.1f);
+        for (int x=0;x<100000;x++)
+        {
+            UUID guid = UUID.randomUUID();
+            var hash = BloomFilterImpl.hash(guid.toString().getBytes(),'1');
+
+            imp.add(hash);;
+        }
     }
 
     @Test
