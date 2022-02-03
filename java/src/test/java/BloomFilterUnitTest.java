@@ -224,6 +224,14 @@ public class BloomFilterUnitTest {
     }
 
     @Test
+    public void testRandom() throws FilterException,NoSuchAlgorithmException,IOException
+    {
+        BloomFilterImpl imp = new BloomFilterImpl(62,0.01f);
+
+        imp.add(new byte[]{16, 43, 72, -124, -99, 34, -113, -77, 78, -105, -113, 30, -90, -25, -38, 70, 76, 109, -92, -27, -15, 65, 36, -113, 3, -115, -4, -49, -81, -1, 69, -125, -22, 53, -49, 65, 31, 65, 18, 60, -56, -17, 16, 5, -11, 5, -3, -49, 4, -48, 122, 31, -37, -113, 54, -35, -83, -114, 62, 57, 125, 120, -26, 106});
+    }
+
+    @Test
     public void runSmokeTest() throws NoSuchAlgorithmException,IOException, FilterException
     {  
         BloomFilterImpl imp = new BloomFilterImpl(1000000, 0.1f);
