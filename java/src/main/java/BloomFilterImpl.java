@@ -102,10 +102,10 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     @Override
     public void add(byte[] element) throws NoSuchAlgorithmException, FilterException, IOException {
         for (int i = 0; i < this.numberOfHashes; i++) {
-            long index = this.calcIndex(element, i,this.numBits).longValue();
+            long index = calcIndex(element, i,this.numBits).longValue();
             int bytepos = (int)index/NUM_BIT_FORMAT;
             index -= bytepos * NUM_BIT_FORMAT;
-            Integer pattern = Integer.MIN_VALUE>>>index-1;
+            Integer pattern = Integer.MIN_VALUE>>>index;
             this.data.set(bytepos,this.data.get(bytepos) | pattern);
         }
         currentElementAmount++;
@@ -119,10 +119,10 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     public boolean mightContain(byte[] element) throws NoSuchAlgorithmException, FilterException, IOException {
         boolean result = true;
         for (int i = 0; i < this.numberOfHashes; i++) {
-            long index = this.calcIndex(element, i,this.numBits).longValue();
+            long index = calcIndex(element, i,this.numBits).longValue();
             int bytepos = (int)index/NUM_BIT_FORMAT;
             index -= bytepos * NUM_BIT_FORMAT;
-            long pattern = Integer.MIN_VALUE>>>index-1;
+            long pattern = Integer.MIN_VALUE>>>index;
             if ((this.data.get(bytepos) & pattern) == pattern) {
                  result&=true;
             }
@@ -134,12 +134,13 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         return result;
     }
 
-    public BigInteger calcIndex(byte[] element, int i, long bits) throws NoSuchAlgorithmException, IOException {
-        BigInteger bi = new BigInteger(this.hash(element, (char) i));
+    public static BigInteger calcIndex(byte[] element, int i, long bits) throws NoSuchAlgorithmException, IOException {
+        var hash = hash(element, (char) i);
+        BigInteger bi = new BigInteger(hash);
         return bi.mod(BigInteger.valueOf(bits));
     }
 
-    private byte[] hash(byte[] toHash, char seed) throws NoSuchAlgorithmException, IOException {
+    public static byte[] hash(byte[] toHash, char seed) throws NoSuchAlgorithmException, IOException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         // concat byte[] and seed
         byte charAsByte = (byte) seed;

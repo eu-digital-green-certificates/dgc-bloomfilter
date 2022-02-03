@@ -6,68 +6,33 @@
 //
 
 import Foundation
-import CommonCrypto
+import CryptoKit
 
 extension BloomFilter {
 	/**
 	 Takes either a string or a byte array and hashes it with the given hashFunction
 	 */
-	public class func hash(_ string: String?, _ bytes: [UInt8]?, hashFunction: HashFunctions, seed: Int) throws -> Int {
-		// set the length of hash function first
-		let length: Int
-		var messageData: Data = Data()
-		var digestData: Data
-		
+    public class func hash(data: Data, hashFunction: HashFunctions, seed: UInt8) throws -> Data {
+
+        let seedBytes = Data(withUnsafeBytes(of: seed.bigEndian, Array.init))
+        
+        let hashData = NSMutableData(data:data)
+        hashData.append(seedBytes)
+        
 		switch hashFunction {
-		case .SHA512:
-			length = Int(CC_SHA256_DIGEST_LENGTH)
+		case .SHA256:
+            return SHA256.digest(input: hashData)
 		case .MD5:
-			length = Int(CC_MD5_DIGEST_LENGTH)
-		
+			return md5(data: hashData)
 		}
-		
-		var stringSource: String = "";
-		
-		if string != nil {
-			stringSource = string! + String(seed)
-		}
-		
-		if bytes != nil {
-			// concat with bigEndian
-			let indexArray = withUnsafeBytes(of: seed.bigEndian, Array.init)
-			var concatBytes = bytes!;
-			concatBytes.append(contentsOf: indexArray)
-			if let s = String(data: Data(concatBytes), encoding: .utf8) {
-				stringSource = s
-			}
-		}
-		if stringSource == "" { throw FilterError.unknownError }
-		if let s = stringSource.data(using: .utf8) {
-			messageData = s
-		}
-		
-		digestData = Data(count: length)
-		
-		_ = digestData.withUnsafeMutableBytes ({ digestBytes -> UInt8 in
-			messageData.withUnsafeBytes { messageBytes -> UInt8 in
-				if let messageBytesBaseAddress = messageBytes.baseAddress, let digestBytesBlindMemory = digestBytes.bindMemory(to: UInt8.self).baseAddress {
-					let messageLength = CC_LONG(messageData.count)
-					switch hashFunction {
-					case .SHA512:
-						CC_SHA256(messageBytesBaseAddress, messageLength, digestBytesBlindMemory)
-					case .MD5:
-						CC_MD5(messageBytesBaseAddress, messageLength, digestBytesBlindMemory)
-					}
-				}
-				return 0
-			}
-		})
-		
-		return 1;
 	}
 }
 
+private func md5(data : NSData) -> Data {
+    return Data(); //not implemented
+}
+
 public enum HashFunctions {
-	case SHA512
+	case SHA256
 	case MD5
 }

@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -31,12 +32,23 @@ public class BloomFilterUnitTest {
     private FilterTestData filterTestData = null;
 
     @Test
+    public void testBigInteger() throws FilterException,IOException,NoSuchAlgorithmException
+    {
+       BigInteger val = BloomFilterImpl.calcIndex(new byte[]{11}, 1, 100);
+       assert val.intValue() == 75;
+
+       val = BloomFilterImpl.calcIndex(new byte[]{1}, 1, 1);
+       assert val.intValue() == 0;
+    }
+
+    @Test
     public void runBasicBloom() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(1, (byte) 1, 1);
         impl.add(new byte[]{0, 5, 33, 44});
+        assert !impl.mightContain(new byte[]{0, 5, 88, 44});
         assert impl.mightContain(new byte[]{0, 5, 33, 44});
         assert impl.getData().length() == 1;
-        assert impl.getData().get(0) == (Integer.MIN_VALUE >>> 25);
+        assert impl.getData().get(0) == (Integer.MIN_VALUE >>> 26);
     }
 
     @Test
@@ -49,9 +61,9 @@ public class BloomFilterUnitTest {
 
         AtomicLongArray longArray = new AtomicLongArray(size);
 
-        int index = impl.calcIndex(new byte[]{0, 5, 33, 44}, 0, numBits).intValue();
+        int index = BloomFilterImpl.calcIndex(new byte[]{0, 5, 33, 44}, 0, numBits).intValue();
         int bytepos = index / (Long.BYTES * 8);
-        long pattern = Long.MIN_VALUE >>> index - 1;
+        long pattern = Long.MIN_VALUE >>> index ;
         longArray.set(bytepos, longArray.get(bytepos) | pattern);
 
         assert impl.getData().get(1) == longArray.get(0);
@@ -81,7 +93,7 @@ public class BloomFilterUnitTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testMaxElementSize() throws FilterException {
-        BloomFilterImpl impl = new BloomFilterImpl(30000000, 0.0000000001f); //ca. 30M per Filter
+        BloomFilterImpl impl = new BloomFilterImpl(29900000, 0.0000000001f); //ca. 30M per Filter
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -131,6 +143,13 @@ public class BloomFilterUnitTest {
 
     @Test
     public void compareSizes() throws FilterException,IOException,NoSuchAlgorithmException {
+        BloomFilterImpl impl = new BloomFilterImpl(1, 1);
+        BloomFilterImpl impl2 = new BloomFilterImpl(1, 0.125f);
+        assert impl.getData().length() == impl2.getData().length();
+    }
+
+    @Test
+    public void compare() throws FilterException,IOException,NoSuchAlgorithmException {
         BloomFilterImpl impl = new BloomFilterImpl(1, 1);
         BloomFilterImpl impl2 = new BloomFilterImpl(1, 0.125f);
         assert impl.getData().length() == impl2.getData().length();
@@ -202,6 +221,27 @@ public class BloomFilterUnitTest {
         assert filter.getK() == 17;
         assert filter.getM() == 239680;
         assert propScan >= (float) ((float) falsePositives / (float) scans);
+    }
+
+    @Test
+    public void testRandom() throws FilterException,NoSuchAlgorithmException,IOException
+    {
+        BloomFilterImpl imp = new BloomFilterImpl(62,0.01f);
+
+        imp.add(new byte[]{16, 43, 72, -124, -99, 34, -113, -77, 78, -105, -113, 30, -90, -25, -38, 70, 76, 109, -92, -27, -15, 65, 36, -113, 3, -115, -4, -49, -81, -1, 69, -125, -22, 53, -49, 65, 31, 65, 18, 60, -56, -17, 16, 5, -11, 5, -3, -49, 4, -48, 122, 31, -37, -113, 54, -35, -83, -114, 62, 57, 125, 120, -26, 106});
+    }
+
+    @Test
+    public void runSmokeTest() throws NoSuchAlgorithmException,IOException, FilterException
+    {  
+        BloomFilterImpl imp = new BloomFilterImpl(1000000, 0.1f);
+        for (int x=0;x<100000;x++)
+        {
+            UUID guid = UUID.randomUUID();
+            var hash = BloomFilterImpl.hash(guid.toString().getBytes(),'1');
+
+            imp.add(hash);;
+        }
     }
 
     @Test
