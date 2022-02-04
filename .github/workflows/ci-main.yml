@@ -34,12 +34,12 @@ jobs:
           mvn versions:set
           --batch-mode
           --file ./java/pom.xml
-          --settings ./settings.xml
+          --settings ./java/settings.xml
           --define newVersion="${APP_VERSION}";
           mvn clean deploy
           --batch-mode
           --file ./java/pom.xml
-          --settings ./settings.xml
+          --settings ./java/settings.xml
           --define app.packages.username="${APP_PACKAGES_USERNAME}"
           --define app.packages.password="${APP_PACKAGES_PASSWORD}";
         env:
