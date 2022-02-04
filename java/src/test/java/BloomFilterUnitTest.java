@@ -287,11 +287,7 @@ public class BloomFilterUnitTest {
                     Arrays.toString(exists).getBytes(StandardCharsets.UTF_8));
             String writtenBase64 = Base64.getEncoder().encodeToString(
                     Arrays.toString(testData.getWritten()).getBytes(StandardCharsets.UTF_8));
-            if (existsBase64.equals(writtenBase64)) {
-                System.out.println("BASE64TEST: Success");
-            } else {
-                System.out.println("BASE64TEST: FAILURE!");
-            }
+            assert existsBase64.equals(writtenBase64);
             System.out.println("TEST (" + i + ") END");
         }
     }
@@ -452,6 +448,7 @@ public class BloomFilterUnitTest {
     }
 
     private JSONArray readFromJson() {
+        /// IF ENV NOT SET
         FileReader fileReader;
         try {
             fileReader = new FileReader(JSON_TEST_FILE);

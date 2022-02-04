@@ -31,11 +31,7 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 			guard let dataFromArray = arrayToData(intArray: filter.getData()) else { throw FilterError.unknownError } /// Seems to be broken!
 			let base64String = dataFromArray.base64EncodedString()
 			print("Swift Filter: \(base64String) vs. Java: \(element.filter)")
-			if base64String.elementsEqual(element.filter) {
-				print("FILTER COMPARE: SUCCESS!")
-			} else {
-				print("FILTER COMPARE: FAILURE!")
-			}
+			XCTAssert(base64String.elementsEqual(element.filter), "BASE64COMPARE NOT EQUAL")
 			var exists: [Int32] = [Int32](repeating: 0, count: element.data.count)
 			//var exists: [Int32] = [Int32(element.data.count)]
 			for x in 0..<element.data.count {
@@ -46,11 +42,7 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 			// compare written and exist arrays
 			let base64Exist = arrayToData(intArray: exists)!.base64EncodedString()
 			let base64Written = array2ToData(intArray: element.written)!.base64EncodedString()
-			if base64Exist.elementsEqual(base64Written) {
-				print("BASE64TEST: SUCCESS!")
-			} else {
-				print("BASE64TEST: FAILURE!")
-			}
+			XCTAssert(base64Exist.elementsEqual(base64Written), "WRITTEN NOT EQUAL EXISTS")
 			print("TEST (\(index)) END")
 		}
 		
