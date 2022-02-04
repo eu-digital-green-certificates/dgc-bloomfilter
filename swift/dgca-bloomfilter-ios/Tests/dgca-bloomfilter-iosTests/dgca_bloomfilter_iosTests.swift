@@ -17,12 +17,56 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 	
 	func testWithTestData() throws {
 		let dataSets = try self.readTestData()
-		
-		for (index, data) in dataSets.enumerated() {
-			print("\(index): \(data.data)")
+		for (index, element) in dataSets.enumerated() {
+			print("TEST (\(index)) START")
+			// guard let data = element.data else { throw FilterError.unknownError }
+			let filter = try BloomFilter(numElems: UInt16(element.data.count), probRate: element.p)
+			for addIndex in 0..<element.data.count {
+				if element.written[addIndex] == 1 {
+					guard let elemToAdd = stringArrayToData(stringArray: element.data) else { throw FilterError.unknownError }
+					try filter.add(element: elemToAdd)
+				}
+			}
+			// get base64 string of filter after all elems have been added
+			guard let dataFromArray = arrayToData(intArray: filter.getData()) else { throw FilterError.unknownError }
+			let base64String = dataFromArray.base64EncodedString()
+			if base64String.elementsEqual(element.filter) {
+				print("BASE64TEST: SUCCESS!")
+			} else {
+				print("BASE64TEST: FAILURE!")
+			}
+			var exists: [Int32] = [Int32](repeating: 0, count: element.data.count)
+			//var exists: [Int32] = [Int32(element.data.count)]
+			for x in 0..<element.data.count {
+				let mightContain = try filter.mightContain(element: element.data[x].data(using: .utf8)!) ? 1 : 0
+				exists[x] = Int32(mightContain)
+				print("Filter reported element \(element.data[x]) \(mightContain == 1 ? "exists" : "not exist") at index \(x)")
+			}
+			// compare written and exist arrays
+			let base64Exist = arrayToData(intArray: exists)!.base64EncodedString()
+			let base64Written = array2ToData(intArray: element.written)!.base64EncodedString()
+			if base64Exist.elementsEqual(base64Written) {
+				print("BASE64TEST: SUCCESS!")
+			} else {
+				print("BASE64TEST: FAILURE!")
+			}
+			print("TEST (\(index) END")
 		}
+		
+	}
+	
+	func stringArrayToData(stringArray: [String]) -> Data? {
+	  return try? JSONSerialization.data(withJSONObject: stringArray, options: [])
+	}
+	
+	func arrayToData(intArray: [Int32]) -> Data? {
+		return try? JSONSerialization.data(withJSONObject: intArray, options: [])
 	}
     
+	func array2ToData(intArray: [Int]) -> Data? {
+		return try? JSONSerialization.data(withJSONObject: intArray, options: [])
+	}
+	
     func testRunBasicBloom() throws {
         let impl = try BloomFilter(size: 1, nHash: 1,numElems: 1);
         try impl.add(element: Data([0, 5, 33, 44]));
@@ -44,8 +88,7 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
         XCTAssert(hash.base64EncodedString() == "G2lkA9iYJ1bCNq+8WwnA9U3QaC7lNKddxLcKXV7Quo8=" )
     }
     
-    func testRandom() throws
-    {
+    func testRandom() throws {
         let filter = try BloomFilter(numElems:62,probRate:0.01)
         
         

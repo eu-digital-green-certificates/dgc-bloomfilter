@@ -43,9 +43,13 @@ class TestDataLoader {
 	
 	private func parseTestData(json: Data) -> [TestData]? {
 		let decoder = JSONDecoder()
-		if let testData = try? decoder.decode([TestData].self, from: json) {
-			print(testData.count)
-			return testData
+		do {
+			let testData = try decoder.decode([TestData].self, from: json)
+				print(testData.count)
+				return testData
+			
+		} catch {
+			print(error)
 		}
 		
 		return nil
