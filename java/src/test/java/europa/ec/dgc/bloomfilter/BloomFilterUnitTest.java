@@ -294,7 +294,7 @@ public class BloomFilterUnitTest {
 
     /// END NEW
 
-   /*@Test
+  
     public void runBloomFilterTest() throws FilterException, IOException, NoSuchAlgorithmException {
         assert this.testObjects != null;
         for (int i = 0; i < this.testObjects.size(); i++) {
@@ -310,7 +310,7 @@ public class BloomFilterUnitTest {
             // perform lookup to check if data exists
             this.filterLookupTest(testData, i);
         }
-    }*/
+    }
 
     private BloomFilterImpl createFilterForData(FilterTestData data) {
         return new BloomFilterImpl(data.getDataSize(), (float) data.getP());
