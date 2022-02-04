@@ -23,13 +23,14 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 			let filter = try BloomFilter(numElems: UInt16(element.data.count), probRate: element.p)
 			for addIndex in 0..<element.data.count {
 				if element.written[addIndex] == 1 {
-					guard let elemToAdd = stringArrayToData(stringArray: element.data) else { throw FilterError.unknownError }
+					guard let elemToAdd = element.data[addIndex].data(using: .utf8) else { throw FilterError.unknownError }
 					try filter.add(element: elemToAdd)
 				}
 			}
 			// get base64 string of filter after all elems have been added
 			guard let dataFromArray = arrayToData(intArray: filter.getData()) else { throw FilterError.unknownError }
 			let base64String = dataFromArray.base64EncodedString()
+			print("Swift Filter: \(base64String) vs. Java: \(element.filter)")
 			if base64String.elementsEqual(element.filter) {
 				print("BASE64TEST: SUCCESS!")
 			} else {
