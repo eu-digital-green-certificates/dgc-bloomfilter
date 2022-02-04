@@ -25,7 +25,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     private final static byte NUM_BYTES=Integer.BYTES;
     private final static byte NUM_BIT_FORMAT = (NUM_BYTES*NUM_BITS);
 
-    @Serial
+
     private static final long serialVersionUID = 7526472295622776147L;
     private static final short version = 1;
 
