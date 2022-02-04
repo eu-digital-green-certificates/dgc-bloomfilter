@@ -28,13 +28,13 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 				}
 			}
 			// get base64 string of filter after all elems have been added
-			guard let dataFromArray = arrayToData(intArray: filter.getData()) else { throw FilterError.unknownError }
+			guard let dataFromArray = arrayToData(intArray: filter.getData()) else { throw FilterError.unknownError } /// Seems to be broken!
 			let base64String = dataFromArray.base64EncodedString()
 			print("Swift Filter: \(base64String) vs. Java: \(element.filter)")
 			if base64String.elementsEqual(element.filter) {
-				print("BASE64TEST: SUCCESS!")
+				print("FILTER COMPARE: SUCCESS!")
 			} else {
-				print("BASE64TEST: FAILURE!")
+				print("FILTER COMPARE: FAILURE!")
 			}
 			var exists: [Int32] = [Int32](repeating: 0, count: element.data.count)
 			//var exists: [Int32] = [Int32(element.data.count)]
