@@ -50,7 +50,7 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 			} else {
 				print("BASE64TEST: FAILURE!")
 			}
-			print("TEST (\(index) END")
+			print("TEST (\(index)) END")
 		}
 		
 	}
