@@ -1,4 +1,4 @@
-/*
+package europa.ec.dgc.bloomfilter;/*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann/Steffen Schulze
  */
@@ -11,9 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.logging.Logger;
 
-import javax.xml.crypto.dsig.spec.XPathType.Filter;
-
-import exception.FilterException;
+import europa.ec.dgc.bloomfilter.exception.FilterException;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
     private long numBits;
@@ -239,7 +237,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
      * @throws CloneNotSupportedException if the object's class does not
      *                                    support the {@code Cloneable} interface. Subclasses
      *                                    that override the {@code clone} method can also
-     *                                    throw this exception to indicate that an instance cannot
+     *                                    throw this europa.ec.dgc.bloomfilter.exception to indicate that an instance cannot
      *                                    be cloned.
      * @see Cloneable
      */

@@ -1,4 +1,4 @@
-package exception;
+package europa.ec.dgc.bloomfilter.exception;
 
 import java.util.Arrays;
 import java.util.Optional;

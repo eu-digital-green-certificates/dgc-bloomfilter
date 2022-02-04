@@ -1,10 +1,10 @@
-/*
+package europa.ec.dgc.bloomfilter;/*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann
  */
 
-import exception.FilterException;
-import model.FilterTestData;
+import europa.ec.dgc.bloomfilter.exception.FilterException;
+import europa.ec.dgc.bloomfilter.model.FilterTestData;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -295,7 +295,7 @@ public class BloomFilterUnitTest {
             System.out.printf("i: %s%n", i);
             JSONObject object = (JSONObject) jsonArray.get(i);
             FilterTestData testData = this.extractTestData(object);
-            this.bloomFilter = new BloomFilterImpl(testData.getDataSize(), testData.getK(), (float) testData.getP());
+            this.bloomFilter = new europa.ec.dgc.bloomfilter.BloomFilterImpl(testData.getDataSize(), testData.getK(), (float) testData.getP());
             this.addToTsiBloomFilter(testData);
             this.storeFilterAsBase64(this.bloomFilter.getBits(), object, i);
             this.printTsiFilterBits();

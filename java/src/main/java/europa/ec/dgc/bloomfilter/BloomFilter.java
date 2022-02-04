@@ -1,9 +1,9 @@
-/*
+package europa.ec.dgc.bloomfilter;/*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann
  */
 
-import exception.FilterException;
+import europa.ec.dgc.bloomfilter.exception.FilterException;
 
 import java.io.IOException;
 import java.io.InputStream;
