@@ -90,9 +90,9 @@ public class BloomFilter {
 		for i in 0..<self.numberOfHashes {
             var index = try BloomFilter.calcIndex(element: element, index: UInt8(i), numberOfBits: self.numBits).asMagnitudeBytes().toLong()
             
-            let bytePos = index / UInt32(self.NUM_FORMAT)
-			index -= bytePos * UInt32(NUM_FORMAT)
-            let pattern = Int32.min >>> index
+            let bytePos = UInt32(index / UInt64(self.NUM_FORMAT))
+            let index2:UInt32 = UInt32(index - UInt64(bytePos * UInt32(NUM_FORMAT)))
+            let pattern = Int32.min >>> index2
             self.array[Int(bytePos)] = self.array[Int(bytePos)] | pattern;
 		}
 		currentElementAmount += 1;
@@ -105,11 +105,10 @@ public class BloomFilter {
 	public func mightContain(element: Data) throws -> Bool {
 		var result = true
 		for i in 0..<self.numberOfHashes {
-            var index = try BloomFilter.calcIndex(element: element, index: UInt8(i), numberOfBits: self.numBits).asMagnitudeBytes().toLong()
-
-            let bytePos = index / UInt32(self.NUM_FORMAT)
-            index -= bytePos * UInt32(NUM_FORMAT)
-            let pattern = Int32.min >>> index
+            var index = try BloomFilter.calcIndex(element: element, index: UInt8(i), numberOfBits: self.numBits).asMagnitudeBytes().toLong()            
+            let bytePos = UInt32(index / UInt64(self.NUM_FORMAT))
+            let index2:UInt32 = UInt32(index - UInt64(bytePos * UInt32(NUM_FORMAT)))
+            let pattern = Int32.min >>> index2
             if (self.array[Int(bytePos)] & pattern) == pattern {
 				result = result && true
 			} else {
@@ -174,14 +173,14 @@ public extension BloomFilter  {
 
 public extension Bytes {
     
-     func toLong() -> UInt32 {
-        let diff = 4-self.count
-        var array: [UInt8] = [0,0,0,0]
+     func toLong() -> UInt64 {
+        let diff = 8-self.count
+        var array: [UInt8] = [0,0,0,0,0,0,0,0]
         
-         for idx in diff...3 {
+         for idx in diff...7 {
              array[idx] = self[idx-diff]
          }
         
-        return  UInt32(bigEndian: Data(array).withUnsafeBytes { $0.pointee })
+        return  UInt64(bigEndian: Data(array).withUnsafeBytes { $0.pointee })
     }
 }
