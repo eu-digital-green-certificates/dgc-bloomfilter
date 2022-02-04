@@ -24,6 +24,10 @@ let package = Package(
             dependencies: ["BigInt"]),
         .testTarget(
             name: "dgca-bloomfilter-iosTests",
-            dependencies: ["dgca-bloomfilter-ios"]),
+            dependencies: ["dgca-bloomfilter-ios"],
+			resources: [
+				.process("resources/filter-test.json")
+			]
+		)
     ]
 )

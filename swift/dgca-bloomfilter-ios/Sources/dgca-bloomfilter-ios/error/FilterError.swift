@@ -17,4 +17,5 @@ enum FilterError: Error {
 	case hashError
 	case filledFilter
 	case tooManyHashRounds
+	case cannotLoadData
 }

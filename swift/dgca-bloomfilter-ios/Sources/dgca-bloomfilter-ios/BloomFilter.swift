@@ -20,22 +20,22 @@ public class BloomFilter {
 	// private var byteSize: Int;
 	private var probRate: Double = 0.0;
 
-	private let DATA_OFFSET: UInt = 6;
+	private let DATA_OFFSET: UInt = 6
 
-	private var numberOfHashes: UInt8;
-	private var numBits: UInt32;
+	private var numberOfHashes: UInt8
+	private var numBits: UInt32
 	
-	private var currentElementAmount: UInt16 = 0;
-	private var definedElementAmount: UInt16;
+	private var currentElementAmount: UInt16 = 0
+	private var definedElementAmount: UInt16
 	
-	private var usedHashFunction: UInt8 = 0;
+	private var usedHashFunction: UInt8 = 0
 	
 	// CONST
     private let NUM_BYTES : UInt16 = UInt16(MemoryLayout<UInt32>.size); // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
 	private let NUM_BITS: UInt16 = 8; // number of bits to use for one byte
     private let NUM_FORMAT: UInt16 = UInt16((MemoryLayout<UInt32>.size * 8))
-	private var VERSION: Int64 = 7526472295622776147;
-    private var version: UInt8 = 1;
+	private var VERSION: Int64 = 7526472295622776147
+    private var version: UInt8 = 1
 	
 	public init(size m: UInt16, nHash k: UInt8, numElems n: UInt16) throws {
 		if (m <= 0 || k <= 0 || n <= 0) {
@@ -99,6 +99,7 @@ public class BloomFilter {
 		
 		if currentElementAmount >= definedElementAmount {
 			//Logger necessary, no exception
+			print("BloomFilter full.")
 		}
 	}
 	
