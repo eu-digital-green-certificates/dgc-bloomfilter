@@ -6,7 +6,7 @@
 //
 
 import Foundation
-
+import BigInt
 
 extension Double {
    var bytes: [UInt8] {
@@ -31,3 +31,17 @@ extension Int32 {
        withUnsafeBytes(of: self, Array.init)
    }
 }
+
+public extension Bytes {
+
+      func toLong() -> UInt32 {
+         let diff = 4-self.count
+         var array: [UInt8] = [0,0,0,0]
+
+          for idx in diff...3 {
+              array[idx] = self[idx-diff]
+          }
+
+         return  UInt32(bigEndian: Data(array).withUnsafeBytes { $0.pointee })
+     }
+ }

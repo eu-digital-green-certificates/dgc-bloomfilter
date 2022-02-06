@@ -32,27 +32,27 @@ public class BloomFilter {
     // CONST
     private let NUM_BYTES = MemoryLayout<UInt32>.size  // On 32-Bit -> Int32 (4 Bytes), On 64-Bit -> Int64 (8 Bytes)
     private let NUM_BITS = 8                           // number of bits to use for one byte
-    private let NUM_FORMAT = MemoryLayout<UInt32>.size * 8
+    private let NUM_FORMAT: UInt32 = UInt32(MemoryLayout<UInt32>.size * 8)
 
     public init() {
         self.array = []
     }
     
-    public init(memorySize: Int, hashesNumber: UInt8, elementsNumber: Int) throws {
-        guard memorySize > 0 && hashesNumber > 0 && elementsNumber > 0 else { throw FilterError.invalidParameters }
-
+    public init?(memorySize: Int, hashesNumber: UInt8, elementsNumber: Int) {
+        guard memorySize > 0 && hashesNumber > 0 && elementsNumber > 0 else { return nil }
+        
         self.numberOfHashes = hashesNumber
-
+        
         let size = (memorySize / NUM_BYTES) + (memorySize % NUM_BYTES)
-        self.numBits = UInt32(size * NUM_FORMAT)
+        self.numBits = UInt32(size) * NUM_FORMAT
 
         self.probRate = BloomFilter.calcProbValue(numBits: numBits, numberOfElements: elementsNumber, numberOfHashes: hashesNumber)
         self.declaredElementsCount = elementsNumber
         self.array = Array(repeating: 0, count: Int(size))
     }
     
-    public init(elementsNumber: Int, probabilityRate: Double) throws {
-        guard elementsNumber > 0 && probabilityRate > 0.0 else { throw FilterError.invalidParameters }
+    public init?(elementsNumber: Int, probabilityRate: Double) {
+        guard elementsNumber > 0 && probabilityRate > 0.0 else { return nil }
         
         self.probRate = probabilityRate
         self.declaredElementsCount = elementsNumber
@@ -60,9 +60,8 @@ public class BloomFilter {
         let bitsNumber = BloomFilter.calcMValue(n: elementsNumber, p: probabilityRate)
         let byteAmount = (bitsNumber / NUM_BITS) + 1
         let size = (byteAmount / NUM_BYTES) + (byteAmount % NUM_BYTES)
-        guard size > 0 else { throw FilterError.invalidSize }
 
-        self.numBits = UInt32(size * NUM_FORMAT)
+        self.numBits = UInt32(size) * NUM_FORMAT
 
         let hashesNumber = BloomFilter.calcKValue(m: numBits, n: elementsNumber)
         self.numberOfHashes = hashesNumber
@@ -72,14 +71,11 @@ public class BloomFilter {
     
     public func add(element: Data) {
         for hashIndex in 0..<self.numberOfHashes {
-            let bytesIdx = BloomFilter.calcIndex(element: element, index: hashIndex, numberOfBits: numBits).asMagnitudeBytes()
+            let index = BloomFilter.calcIndex(element: element, index: UInt8(hashIndex), numberOfBits: self.numBits).asMagnitudeBytes().toLong()
             
-            let data = Data(bytesIdx)
-            var index = UInt32(littleEndian: data.withUnsafeBytes { $0.pointee })
-            
-            let bytePos = index / UInt32(NUM_FORMAT)
-            index -= bytePos * UInt32(NUM_FORMAT)
-            let pattern = index == 0 ? Int32.min : Int32.min >>> (index-1)
+            let bytePos = index / NUM_FORMAT
+            let normIndex = index - bytePos * NUM_FORMAT
+            let pattern = Int32.min >>> normIndex
             self.array[Int(bytePos)] = array[Int(bytePos)] | pattern
         }
         addedElementsCount += 1
@@ -90,24 +86,28 @@ public class BloomFilter {
     
     public func mightContain(element: Data) -> Bool {
         for hashIndex in 0..<self.numberOfHashes {
-            let bytesIdx = BloomFilter.calcIndex(element: element, index: hashIndex, numberOfBits: numBits).asMagnitudeBytes()
+            let index = BloomFilter.calcIndex(element: element, index: UInt8(hashIndex), numberOfBits: numBits).asMagnitudeBytes().toLong()
             
-            let data = Data(bytesIdx)
-            var index = UInt32(littleEndian: data.withUnsafeBytes {$0.pointee })
+            let bytePos = index / NUM_FORMAT
+            let normIndex = index - bytePos * NUM_FORMAT
+            let pattern = Int32.min >>> normIndex
             
-            let bytePos = index / UInt32(NUM_FORMAT)
-            index -= bytePos * UInt32(NUM_FORMAT)
-            let pattern = index == 0 ? Int32.min : Int32.min >>> (index-1)
-
             guard (array[Int(bytePos)] & pattern) == pattern else { return false }
         }
         return true
     }
     
+    public func resetElements() {
+        for ind in 0..<array.count {
+            array[ind] = 0
+        }
+        addedElementsCount = 0
+    }
+    
     public func getData() -> [Int32] {
         return array
     }
-
+    
     public static func calcIndex(element: Data, index: UInt8, numberOfBits: UInt32) -> BInt {
         let hash = BloomFilter.hash(data:element, hashFunction: HashFunctions.SHA256, seed: index)
         let hashInt = BInt(signed: Array(hash))
@@ -117,14 +117,14 @@ public class BloomFilter {
         return result
     }
     
-    public func readFrom(data: Data) throws {
+    public func readFrom(data: Data) {
         self.version = data[0..<2].reversed().withUnsafeBytes {$0.load(as: UInt16.self)}
         self.numberOfHashes = data[2..<3].withUnsafeBytes {$0.load(as: UInt8.self)}
         self.usedHashFunction = data[3..<4].withUnsafeBytes {$0.load(as: UInt8.self)}
         self.probRate = data[4..<12].reversed().withUnsafeBytes {$0.load(as: Double.self)}
         let declaredAmount = data[12..<16].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
         self.declaredElementsCount =  Int(declaredAmount)
-
+        
         let currentAmount = data[16..<20].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
         self.addedElementsCount = Int(currentAmount)
         let elementsCount = data[20..<24].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
@@ -139,10 +139,10 @@ public class BloomFilter {
             startIndex += 4
         }
         
-        numBits =  UInt32(array.count * 4 * Int(NUM_FORMAT))
+        self.numBits =  UInt32(array.count * 4) * NUM_FORMAT
     }
     
-    public func writeToData() throws -> Data  {
+    public func writeToData() -> Data  {
         var data = Data(count: 24 + array.count * 4)
         data[0..<2] = Data(version.bytes.reversed())
         data[2..<4] = Data([usedHashFunction, numberOfHashes])
@@ -171,7 +171,7 @@ func >>> (lhs: Int32, rhs: UInt32) -> Int32 {
 public extension BloomFilter  {
     
     static func calcProbValue(numBits: UInt32, numberOfElements n: Int, numberOfHashes k: UInt8) -> Double {
-        return Double(pow(1.0 - exp(Float(-Int8(k)) / (Float)(numBits / 8) / Float(n)), Float(k)))
+        return Double(pow(1.0 - exp(Double(-Int8(k)) / (Double)(numBits / 8) / Double(n)), Double(k)))
     }
     
     static func calcMValue(n: Int, p: Double) -> Int {
@@ -179,6 +179,6 @@ public extension BloomFilter  {
     }
     
     static func calcKValue(m: UInt32, n: Int) -> UInt8 {
-        return UInt8(max(1, round(Float(m) / Float(n) * log(2))))
+        return UInt8(max(1, round(Double(m) / Double(n) * log(2))))
     }
 }

@@ -1,11 +1,11 @@
 import XCTest
 @testable
-import BloomFilter
+import DGCBloomFilter
 
 final class BloomFilterTests: XCTestCase {
     
     func testRunBasicBloom() throws {
-        let impl =  try BloomFilter(memorySize: 1, hashesNumber: 1, elementsNumber: 1)
+        let impl =  BloomFilter(memorySize: 1, hashesNumber: 1, elementsNumber: 1)!
         impl.add(element: Data([0, 5, 33, 44]))
         XCTAssert(impl.mightContain(element:Data( [0, 5, 88, 44])))
         XCTAssert(impl.mightContain(element:Data( [0, 5, 33, 44])))
