@@ -224,7 +224,7 @@ public class BloomFilterUnitTest {
         int falsePositives = doScans(filter, scans);
         assert filter.getK() == 17;
         assert filter.getM() == 239680;
-        assert propScan >= (float) ((float) falsePositives / (float) scans);
+        assert propScan >= ((float) falsePositives / (float) scans);
     }
 
     @Test
