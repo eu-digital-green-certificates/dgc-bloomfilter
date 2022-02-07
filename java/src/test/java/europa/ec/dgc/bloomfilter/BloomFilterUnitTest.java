@@ -189,7 +189,7 @@ public class BloomFilterUnitTest {
         filter.add(new byte[]{8, 1, 2, 3, 6});
 
         int falsePositives = doScans(filter, scans);
-        assert propScan >= (float) ((float) falsePositives / (float) scans);
+        assert propScan >= ((float) falsePositives / (float) scans);
     }
 
     @Test
@@ -203,7 +203,7 @@ public class BloomFilterUnitTest {
         filter.add(new byte[]{8, 1, 2, 3, 6});
 
         int falsePositives = doScans(filter, scans);
-        assert propScan >= (float) ((float) falsePositives / (float) scans);
+        assert propScan >= ((float) falsePositives / (float) scans);
     }
 
     @Test
@@ -297,7 +297,7 @@ public class BloomFilterUnitTest {
 
     /// END NEW
 
-  
+
     public void runBloomFilterTest() throws FilterException, IOException, NoSuchAlgorithmException {
         assert this.testObjects != null;
         for (int i = 0; i < this.testObjects.size(); i++) {
