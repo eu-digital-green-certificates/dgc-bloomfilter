@@ -33,6 +33,9 @@ public class BloomFilterUnitTest {
     private BloomFilterImpl bloomFilter;
     private FilterTestData filterTestData = null;
 
+    // Set to anything to enable outputting to json file
+    private final String writeToJson = System.getenv("JSON_WRITE");
+
     @Test
     public void testBigInteger() throws FilterException, IOException, NoSuchAlgorithmException {
         BigInteger val = BloomFilterImpl.calcIndex(new byte[]{11}, 1, 100);
@@ -427,6 +430,7 @@ public class BloomFilterUnitTest {
     }
 
     private void writeToJson(JSONObject object, int index) {
+        if (this.writeToJson == null) { return; }
         JSONArray jsonArraySource = this.readFromJson();
         FileWriter fileWriter;
         try {
@@ -448,7 +452,6 @@ public class BloomFilterUnitTest {
     }
 
     private JSONArray readFromJson() {
-        /// IF ENV NOT SET
         FileReader fileReader;
         try {
             fileReader = new FileReader(JSON_TEST_FILE);
