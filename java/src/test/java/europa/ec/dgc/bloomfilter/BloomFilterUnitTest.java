@@ -33,6 +33,9 @@ public class BloomFilterUnitTest {
     private BloomFilterImpl bloomFilter;
     private FilterTestData filterTestData = null;
 
+    // Set to anything to enable outputting to json file
+    private final String writeToJson = System.getenv("JSON_WRITE");
+
     @Test
     public void testBigInteger() throws FilterException, IOException, NoSuchAlgorithmException {
         BigInteger val = BloomFilterImpl.calcIndex(new byte[]{11}, 1, 100);
@@ -186,7 +189,7 @@ public class BloomFilterUnitTest {
         filter.add(new byte[]{8, 1, 2, 3, 6});
 
         int falsePositives = doScans(filter, scans);
-        assert propScan >= (float) ((float) falsePositives / (float) scans);
+        assert propScan >= ((float) falsePositives / (float) scans);
     }
 
     @Test
@@ -200,7 +203,7 @@ public class BloomFilterUnitTest {
         filter.add(new byte[]{8, 1, 2, 3, 6});
 
         int falsePositives = doScans(filter, scans);
-        assert propScan >= (float) ((float) falsePositives / (float) scans);
+        assert propScan >= ((float) falsePositives / (float) scans);
     }
 
     @Test
@@ -221,7 +224,7 @@ public class BloomFilterUnitTest {
         int falsePositives = doScans(filter, scans);
         assert filter.getK() == 17;
         assert filter.getM() == 239680;
-        assert propScan >= (float) ((float) falsePositives / (float) scans);
+        assert propScan >= ((float) falsePositives / (float) scans);
     }
 
     @Test
@@ -294,7 +297,7 @@ public class BloomFilterUnitTest {
 
     /// END NEW
 
-  
+
     public void runBloomFilterTest() throws FilterException, IOException, NoSuchAlgorithmException {
         assert this.testObjects != null;
         for (int i = 0; i < this.testObjects.size(); i++) {
@@ -427,6 +430,7 @@ public class BloomFilterUnitTest {
     }
 
     private void writeToJson(JSONObject object, int index) {
+        if (this.writeToJson == null) { return; }
         JSONArray jsonArraySource = this.readFromJson();
         FileWriter fileWriter;
         try {
@@ -448,7 +452,6 @@ public class BloomFilterUnitTest {
     }
 
     private JSONArray readFromJson() {
-        /// IF ENV NOT SET
         FileReader fileReader;
         try {
             fileReader = new FileReader(JSON_TEST_FILE);
