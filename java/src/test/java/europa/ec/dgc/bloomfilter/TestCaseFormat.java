@@ -1,4 +1,4 @@
-/*
+package europa.ec.dgc.bloomfilter;/*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann
  */

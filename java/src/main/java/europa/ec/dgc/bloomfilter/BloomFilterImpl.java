@@ -1,4 +1,4 @@
-/*
+package europa.ec.dgc.bloomfilter;/*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann/Steffen Schulze
  */
@@ -11,9 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.logging.Logger;
 
-import javax.xml.crypto.dsig.spec.XPathType.Filter;
-
-import exception.FilterException;
+import europa.ec.dgc.bloomfilter.exception.FilterException;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
     private long numBits;
@@ -27,7 +25,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
     private final static byte NUM_BYTES=Integer.BYTES;
     private final static byte NUM_BIT_FORMAT = (NUM_BYTES*NUM_BITS);
 
-    @Serial
+
     private static final long serialVersionUID = 7526472295622776147L;
     private static final short version = 1;
 
@@ -105,7 +103,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
             long index = calcIndex(element, i,this.numBits).longValue();
             int bytepos = (int)index/NUM_BIT_FORMAT;
             index -= bytepos * NUM_BIT_FORMAT;
-            Integer pattern = Integer.MIN_VALUE>>>index-1;
+            Integer pattern = Integer.MIN_VALUE>>>index;
             this.data.set(bytepos,this.data.get(bytepos) | pattern);
         }
         currentElementAmount++;
@@ -122,7 +120,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
             long index = calcIndex(element, i,this.numBits).longValue();
             int bytepos = (int)index/NUM_BIT_FORMAT;
             index -= bytepos * NUM_BIT_FORMAT;
-            long pattern = Integer.MIN_VALUE>>>index-1;
+            long pattern = Integer.MIN_VALUE>>>index;
             if ((this.data.get(bytepos) & pattern) == pattern) {
                  result&=true;
             }
@@ -239,7 +237,7 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
      * @throws CloneNotSupportedException if the object's class does not
      *                                    support the {@code Cloneable} interface. Subclasses
      *                                    that override the {@code clone} method can also
-     *                                    throw this exception to indicate that an instance cannot
+     *                                    throw this europa.ec.dgc.bloomfilter.exception to indicate that an instance cannot
      *                                    be cloned.
      * @see Cloneable
      */

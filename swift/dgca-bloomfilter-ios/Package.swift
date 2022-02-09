@@ -24,6 +24,9 @@ let package = Package(
             dependencies: ["BigInt"]),
         .testTarget(
             name: "DGCBloomFilterTests",
-            dependencies: ["DGCBloomFilter"]),
+            dependencies: ["DGCBloomFilter"],
+            resources: [
+                .process("resources/filter-test.json")
+            ]),
     ]
 )

@@ -9,7 +9,8 @@ import Foundation
 import BigInt
 
 public class BloomFilter {
-    private var array: [Int32] = []                  // each element has 4 bytes: MemoryLayout<Int32>.size == 4 Bytes;
+    private var array: [Int32] = []
+    // each element has 4 bytes: MemoryLayout<Int32>.size == 4 Bytes;
     
     /**
      n -> number of items in the filter   (n = ceil(m / (-k / log(1 - exp(log(p) / k)))))
