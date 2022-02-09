@@ -13,18 +13,12 @@ extension BloomFilter {
      Takes either a string or a byte array and hashes it with the given hashFunction
      */
     public class func hash(data: Data, hashFunction: HashFunctions, seed: UInt8) -> Data {
-
         let seedBytes = Data(withUnsafeBytes(of: seed, Array.init))
+        var hashingData = data
+        hashingData.append(seedBytes)
         
-        let hashData = NSMutableData(data:data)
-        hashData.append(seedBytes)
-        
-        switch hashFunction {
-        case .SHA256:
-            return SHA256.digest(input: hashData)
-        case .MD5:
-            return md5(data: hashData)
-        }
+        let resultData = SHA256.sha256(data: hashingData)
+        return resultData
     }
 }
 
