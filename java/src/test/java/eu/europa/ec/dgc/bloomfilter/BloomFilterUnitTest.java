@@ -1,10 +1,10 @@
-package europa.ec.dgc.bloomfilter;/*
+package eu.europa.ec.dgc.bloomfilter;/*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann
  */
 
-import europa.ec.dgc.bloomfilter.exception.FilterException;
-import europa.ec.dgc.bloomfilter.model.FilterTestData;
+import eu.europa.ec.dgc.bloomfilter.exception.FilterException;
+import eu.europa.ec.dgc.bloomfilter.model.FilterTestData;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -24,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.logging.Filter;
 
 public class BloomFilterUnitTest {
 

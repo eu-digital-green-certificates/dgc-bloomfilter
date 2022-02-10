@@ -9,7 +9,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.t-systems</groupId>
+    <groupId>eu.europa.ec.dgc</groupId>
     <artifactId>BloomFilter</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -20,6 +20,24 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
+
+    <url>https://github.com/eu-digital-green-certificates/dgc-bloomfilter</url>
+    <ciManagement>
+        <url>https://github.com/eu-digital-green-certificates/dgc-bloomfilter/actions?query=workflow%3Aci</url>
+    </ciManagement>
+    <issueManagement>
+        <url>https://github.com/eu-digital-green-certificates/dgc-bloomfilter/issues</url>
+    </issueManagement>
+    <scm>
+        <url>https://github.com/eu-digital-green-certificates/dgc-bloomfilter</url>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>dgc-github</id>
+            <url>https://maven.pkg.github.com/${github.organization}/${github.project}</url>
+        </repository>
+    </distributionManagement>
 
     <build>
         <plugins>

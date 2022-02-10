@@ -3,7 +3,7 @@
  * Author: Paul Ballmann
  */
 
-package europa.ec.dgc.bloomfilter.model;
+package eu.europa.ec.dgc.bloomfilter.model;
 
 import org.json.simple.JSONArray;
 
