@@ -19,6 +19,13 @@
         <!-- charset -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- license -->
+        <license.projectName>EU Digital Green Certificate Gateway Service / dgc-bloomfilter</license.projectName>
+        <license.inceptionYear>2022</license.inceptionYear>
+        <license.licenseName>apache_v2</license.licenseName>
+        <!-- github -->
+        <github.organization>eu-digital-green-certificates</github.organization>
+        <github.project>dgc-bloomfilter</github.project>
     </properties>
 
     <url>https://github.com/eu-digital-green-certificates/dgc-bloomfilter</url>
