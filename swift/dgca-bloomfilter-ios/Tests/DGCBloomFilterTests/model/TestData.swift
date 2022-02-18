@@ -9,9 +9,9 @@ import Foundation
 
 struct TestData: Codable {
 	let p: Double;
-	let filter: String;
-	let data: [String];
-	let exists: String;
-	let k: Int;
-	let written: [Int];
+	let filter: String
+	let data: [String]
+	let exists: String
+	let k: Int
+	let written: [Int]
 }

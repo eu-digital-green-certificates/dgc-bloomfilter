@@ -1,8 +1,8 @@
 import XCTest
 @testable
-import dgca_bloomfilter_ios
+import DGCBloomFilter
 
-final class dgca_bloomfilter_iosTests: XCTestCase {
+final class DGCBloomFilterTests: XCTestCase {
 	var testDataLoader: TestDataLoader!
 	
 	func testReadTestData() throws {
@@ -20,11 +20,11 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 		for (index, element) in dataSets.enumerated() {
 			print("TEST (\(index)) START")
 			// guard let data = element.data else { throw FilterError.unknownError }
-			let filter = try BloomFilter(numElems: UInt16(element.data.count), probRate: element.p)
+			let filter = BloomFilter(elementsNumber: element.data.count, probabilityRate: element.p)!
 			for addIndex in 0..<element.data.count {
 				if element.written[addIndex] == 1 {
 					guard let elemToAdd = element.data[addIndex].data(using: .utf8) else { throw FilterError.unknownError }
-					try filter.add(element: elemToAdd)
+					filter.add(element: elemToAdd)
 				}
 			}
 			// get base64 string of filter after all elems have been added
@@ -36,7 +36,7 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 			var exists: [Int32] = [Int32](repeating: 0, count: element.data.count)
 			//var exists: [Int32] = [Int32(element.data.count)]
 			for x in 0..<element.data.count {
-				let mightContain = try filter.mightContain(element: element.data[x].data(using: .utf8)!) ? 1 : 0
+				let mightContain = filter.mightContain(element: element.data[x].data(using: .utf8)!) ? 1 : 0
 				exists[x] = Int32(mightContain)
 				print("Filter reported element \(element.data[x]) \(mightContain == 1 ? "exists" : "not exist") at index \(x)")
 			}
@@ -46,7 +46,6 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 			XCTAssert(base64Exist.elementsEqual(base64Written), "WRITTEN NOT EQUAL EXISTS")
 			print("TEST (\(index)) END")
 		}
-		
 	}
 	
 	func stringArrayToData(stringArray: [String]) -> Data? {
@@ -62,31 +61,30 @@ final class dgca_bloomfilter_iosTests: XCTestCase {
 	}
 	
     func testRunBasicBloom() throws {
-        let impl = try BloomFilter(size: 1, nHash: 1,numElems: 1);
-        try impl.add(element: Data([0, 5, 33, 44]));
-        XCTAssert(try !impl.mightContain(element:Data( [0, 5, 88, 44])));
-        XCTAssert(try impl.mightContain(element:Data( [0, 5, 33, 44])));
-        XCTAssert(impl.getData().count == 1);
-        XCTAssert(impl.getData()[0] == (Int32.min >>> 26));
+        let impl = BloomFilter(memorySize: 1, hashesNumber: 1, elementsNumber: 1)!
+        impl.add(element: Data([0, 5, 33, 44]))
+        XCTAssert(!impl.mightContain(element:Data( [0, 5, 88, 44])))
+        XCTAssert(impl.mightContain(element:Data( [0, 5, 33, 44])))
+        XCTAssert(impl.getData().count == 1)
+        XCTAssert(impl.getData()[0] == (Int32.min >>> 26))
     }
     
     func testBigInteger() throws {
-        var val = try BloomFilter.calcIndex(element: Data([11]), index: 1, numberOfBits: 100).asInt()
+        var val = BloomFilter.calcIndex(element: Data([11]), index: 1, numberOfBits: 100).asInt()
         XCTAssert(val == 75)
-        val = try BloomFilter.calcIndex(element: Data([1]), index: 1, numberOfBits: 1).asInt();
-        XCTAssert( val == 0);
+        val = BloomFilter.calcIndex(element: Data([1]), index: 1, numberOfBits: 1).asInt()
+        XCTAssert( val == 0)
     }
     
     func testHash() throws {
-        let hash = try BloomFilter.hash(data: Data([11]), hashFunction: HashFunctions.SHA256, seed: 1)
+        let hash = BloomFilter.hash(data: Data([11]), hashFunction: HashFunctions.SHA256, seed: 1)
         XCTAssert(hash.base64EncodedString() == "G2lkA9iYJ1bCNq+8WwnA9U3QaC7lNKddxLcKXV7Quo8=" )
     }
     
     func testRandom() throws {
-        let filter = try BloomFilter(numElems:62,probRate:0.01)
+        let filter = BloomFilter(elementsNumber: 62, probabilityRate:0.01)!
         
-        
-        try filter.add(element: Data([16, 43, 72, 132, 157, 34, 143, 179, 78, 151, 143, 30, 166, 231, 218, 70, 76, 109, 164, 229, 241, 65, 36, 143, 3, 141, 252, 207, 175, 255, 69, 131, 234, 53, 207, 65, 31, 65, 18, 60, 200, 239, 16, 5, 245, 5, 253, 207, 4, 208, 122, 31, 219, 143, 54, 221, 173, 142, 62, 57, 125, 120, 230, 106 ]))
+        filter.add(element: Data([16, 43, 72, 132, 157, 34, 143, 179, 78, 151, 143, 30, 166, 231, 218, 70, 76, 109, 164, 229, 241, 65, 36, 143, 3, 141, 252, 207, 175, 255, 69, 131, 234, 53, 207, 65, 31, 65, 18, 60, 200, 239, 16, 5, 245, 5, 253, 207, 4, 208, 122, 31, 219, 143, 54, 221, 173, 142, 62, 57, 125, 120, 230, 106 ]))
     }
 }
 

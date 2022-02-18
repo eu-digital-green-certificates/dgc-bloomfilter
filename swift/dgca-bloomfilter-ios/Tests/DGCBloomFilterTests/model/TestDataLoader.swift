@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import dgca_bloomfilter_ios
+import DGCBloomFilter
 
 class TestDataLoader {
 	var testData: [TestData]?

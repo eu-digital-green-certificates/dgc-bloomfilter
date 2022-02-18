@@ -38,21 +38,29 @@ public class SHA256 {
     return iOS12Digest(input: input)
   }
 
-  public static func iOS12Digest(input: NSData) -> Data {
-    let input = input as Data
-    var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-    _ = input.withUnsafeBytes { bytes in
-      CC_SHA256(bytes.baseAddress, CC_LONG(input.count), &digest)
+    public static func sha256(data : Data) -> Data {
+        var hash = [UInt8](repeating: 0,  count: Int(CC_SHA256_DIGEST_LENGTH))
+        data.withUnsafeBytes {
+            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &hash)
+        }
+        return Data(hash)
     }
-    return Data(digest)
-  }
+    
+    public static func iOS12Digest(input: NSData) -> Data {
+      let input = input as Data
+      var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+      _ = input.withUnsafeBytes { bytes in
+        CC_SHA256(bytes.baseAddress, CC_LONG(input.count), &digest)
+      }
+      return Data(digest)
+    }
 
-  public static func iOS13Digest(input: NSData) -> Data {
-    let digestLength = Int(CC_SHA256_DIGEST_LENGTH)
-    var hash = [UInt8](repeating: 0, count: digestLength)
-    CC_SHA256(input.bytes, UInt32(input.length), &hash)
-    return Data(NSData(bytes: hash, length: digestLength))
-  }
+    public static func iOS13Digest(input: NSData) -> Data {
+      let digestLength = Int(CC_SHA256_DIGEST_LENGTH)
+      var hash = [UInt8](repeating: 0, count: digestLength)
+      CC_SHA256(input.bytes, UInt32(input.length), &hash)
+      return Data(NSData(bytes: hash, length: digestLength))
+    }
 
   public static func stringDigest(input: Data) -> String {
     return digest(input: input as NSData).base64EncodedString()
