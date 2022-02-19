@@ -1,4 +1,4 @@
-package europa.ec.dgc.bloomfilter;/*
+package eu.europa.ec.dgc.bloomfilter;/*
  * Copyright (c) 2022 T-Systems International GmbH and all other contributors
  * Author: Paul Ballmann/Steffen Schulze
  */
@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.logging.Logger;
 
-import europa.ec.dgc.bloomfilter.exception.FilterException;
+import eu.europa.ec.dgc.bloomfilter.exception.FilterException;
 
 public class BloomFilterImpl implements BloomFilter, Serializable {
     private long numBits;

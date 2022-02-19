@@ -3,7 +3,7 @@
  * Author: Paul Ballmann
  */
 
-package europa.ec.dgc.bloomfilter.model;
+package eu.europa.ec.dgc.bloomfilter.model;
 
 import java.util.Arrays;
 import java.util.Optional;
