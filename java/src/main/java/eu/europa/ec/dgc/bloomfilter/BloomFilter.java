@@ -11,11 +11,10 @@ import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 
 public interface BloomFilter {
-    float    getP();
+    float   getP();
     int     getK();
     long    getM();
     int     getN();
-    int     getCurrentN();
     void    add(byte[] element)                 throws NoSuchAlgorithmException, FilterException, IOException;
     boolean mightContain(byte[] element)        throws NoSuchAlgorithmException, FilterException, IOException;
     void    readFrom(InputStream inputStream);

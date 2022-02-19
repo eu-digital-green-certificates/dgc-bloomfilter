@@ -34,7 +34,7 @@ Main goal of the standardization is, to have an 1:1 crossplatform behavior in sw
 
 
 - [x] Java
-- [x] Swift
+- [x] [Swift](https://github.com/eu-digital-green-certificates/dgc-bloomfilter-ios)
 - [ ] Kotlin
 - [ ] C#
 - [ ] Javascript

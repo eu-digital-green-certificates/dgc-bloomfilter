@@ -283,9 +283,4 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         return this.definedElementAmount;
     }
 
-    @Override
-    public int getCurrentN() {
-        return this.definedElementAmount;
-    }
-
 }
