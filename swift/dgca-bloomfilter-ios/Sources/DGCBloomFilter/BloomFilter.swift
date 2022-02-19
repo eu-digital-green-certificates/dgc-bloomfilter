@@ -138,14 +138,7 @@ public class BloomFilter {
         self.usedHashFunction = data[3..<4].withUnsafeBytes {$0.load(as: UInt8.self)}
 	
 		self.probRate = convert([UInt8](data[4..<8]))
-
-		// print("NEW: \(float.bytes.reversed().toDouble())")
-		print(convert([UInt8](data[4..<8].reversed())))
-		// self.probRate = Double(String(float))!
-		let val = [UInt8](data[4..<8])
-		// let dVal = Double(val)
-		// let str = d.map { String(format: "%02x", $0)}.joined()
-        // print(str)
+        
 		let declaredAmount = data[8..<12].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
         self.definedElementAmount =  Int(declaredAmount)
         
@@ -163,7 +156,7 @@ public class BloomFilter {
             startIndex += 4
         }
         
-		self.numBits =  UInt32(array.count + 1) * NUM_FORMAT
+		self.numBits =  UInt32(array.count) * NUM_FORMAT
     }
     
     public func writeToData() -> Data  {

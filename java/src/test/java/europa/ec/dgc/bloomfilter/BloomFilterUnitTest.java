@@ -11,6 +11,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -322,7 +324,7 @@ public class BloomFilterUnitTest {
 
 
     @Test
-    public void testSwiftJava() throws IOException, NoSuchAlgorithmException, FilterException {
+    public void testWriteReadFrom() throws IOException, NoSuchAlgorithmException, FilterException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         BloomFilterImpl impl = new BloomFilterImpl(500, 0.000000001f);
         impl.add(new byte[]{5, 3, 2, 7});
@@ -330,11 +332,27 @@ public class BloomFilterUnitTest {
         impl.add(new byte[]{5, 2, 7});
         impl.add(new byte[]{5, 1, 2, 0});
         impl.add(new byte[]{5});
-        impl.writeTo(output);
+        impl.writeTo(output);        
         byte[] byteArrayBase64 = Base64.getEncoder().encode(output.toByteArray());
         String base64 = Base64.getEncoder().encodeToString(output.toByteArray());
         System.out.println(base64);
         System.out.println(Arrays.toString(byteArrayBase64));
+
+        ByteArrayInputStream input = new ByteArrayInputStream(Base64.getDecoder().decode(base64));
+        BloomFilterImpl impl2 = new BloomFilterImpl(input);
+
+        assert impl2.getK() == impl.getK();
+        assert impl2.getM() == impl.getM();
+        assert impl2.getN() == impl.getN();
+        assert impl2.getP() == impl.getP();
+        assert impl2.getData().length() == impl2.getData().length();
+        
+        assert impl2.mightContain(new byte[]{5, 3, 2, 7});
+        assert impl2.mightContain(new byte[]{5, 3, 0});
+        assert impl2.mightContain(new byte[]{5, 2, 7});
+        assert impl2.mightContain(new byte[]{5, 1, 2, 0});
+        assert impl2.mightContain(new byte[]{5});
+
     }
 
     public void calcBaseStringFromFilter(int i) {
