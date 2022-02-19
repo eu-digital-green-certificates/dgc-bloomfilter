@@ -148,7 +148,6 @@ public class BloomFilterImpl implements BloomFilter, Serializable {
         return md.digest(outputStream.toByteArray());
     }
 
-
     //region Streams
 
     /**

@@ -8,7 +8,7 @@
 import Foundation
 
 struct TestData: Codable {
-	let p: Double;
+	let p: Float;
 	let filter: String
 	let data: [String]
 	let exists: String

@@ -11,12 +11,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -348,6 +343,41 @@ public class BloomFilterUnitTest {
         //  this.writeToJson((JSONObject) this.testObjects.get(i), i);
         // store base64 in data
         //  this.storeBase64InFile(i, filterAsBase64);
+    }
+
+    @Test
+    public void testSomething() throws IOException {
+        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bs);
+        // dos.writeFloat(0.0000000000000000000001f);
+        dos.writeDouble(0.0000000000000000000001);
+        dos.flush();
+        System.out.println(Arrays.toString(bs.toByteArray()));
+        /// 0.0000000001
+        // SWIFT = le: [255, 230, 219, 46] || bigEndian: [46, 219, 230, 255]
+        // JAVA = [46, -37, -26, -1]
+        // bigEndian: [46, -37, -26, -1]
+
+        /// 0.001
+        // JAVA = [58, -125, 18, 111]
+        // bigEndian: [58, -125, 18, 111]
+        // SWIFT = le: [111, 18, 131, 58]  || bigEndian: [58, 131, 18, 111]
+
+        /// 0.0000000000000000000001
+        // JAVA = [26, -15, -55, 1]
+        // SWIFT = [26, -15, -55, 1]
+        // SWIFT == [230, 94, 23, 16, 32, 57, 94, 59]
+
+        /// 1.0
+        // Swift = bE: [63, 128, 0, 0]
+        // JAVA = [63, -128, 0, 0]
+        // bE: [63, 128, 0, 0]
+
+
+        // SWIFT = [230, 94, 23, 16, 32, 57, 94, 59]
+        // SWIFT REV: = [59, 94, 57, 32, 16, 32, 94, 230]
+        // SWIFT RE =   [59, 94, 57, 32, 16, 32, 94, -26]
+        // JAVA =       [59, 94, 57, 32, 16, 23, 94, -26]
     }
 
     public void filterLookupTest(FilterTestData testData, int index) throws FilterException,

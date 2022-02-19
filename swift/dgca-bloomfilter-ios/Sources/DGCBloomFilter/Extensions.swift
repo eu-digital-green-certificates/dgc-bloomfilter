@@ -36,7 +36,7 @@ public extension Bytes {
 
       func toLong() -> UInt32 {
          let diff = 4-self.count
-         var array: [UInt8] = [0,0,0,0]
+         var array: [UInt8] = [0, 0, 0, 0]
 
           for idx in diff...3 {
               array[idx] = self[idx-diff]
@@ -44,4 +44,25 @@ public extension Bytes {
 
          return  UInt32(bigEndian: Data(array).withUnsafeBytes { $0.pointee })
      }
- }
+	
+	func toDouble() -> Double {
+	   let diff = 8 - self.count
+	   var array: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0]
+
+		for idx in diff...7 {
+			array[idx] = self[idx-diff]
+		}
+
+	   return Double(array)!
+   }
+}
+/*
+extension FloatingPoint {
+	init?(_ bytes: [UInt8]) {
+			guard bytes.count == MemoryLayout<Self>.size else { return nil }
+			self = bytes.withUnsafeBytes {
+				return $0.load(fromByteOffset: 0, as: Self.self)
+			}
+		}
+}
+*/
