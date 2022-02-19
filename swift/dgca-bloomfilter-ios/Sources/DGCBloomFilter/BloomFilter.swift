@@ -163,13 +163,13 @@ public class BloomFilter {
         var data = Data(count: 24 + array.count * 4)
         data[0..<2] = Data(version.bytes.reversed())
         data[2..<4] = Data([usedHashFunction, numberOfHashes])
-        data[4..<12] = Data(probRate.bytes.reversed())
-        data[12..<16] = Data(Int32(definedElementAmount).bytes.reversed())
-        data[16..<20] =  Data(Int32(currentElementAmount).bytes.reversed())
+        data[4..<8] = Data(probRate.bytes.reversed())
+        data[8..<12] = Data(Int32(definedElementAmount).bytes.reversed())
+        data[12..<16] =  Data(Int32(currentElementAmount).bytes.reversed())
         let dataLen = Int32(array.count)
-        data[20..<24] = Data(dataLen.bytes.reversed())
+        data[16..<20] = Data(dataLen.bytes.reversed())
         
-        var startIndex = 24
+        var startIndex = 20
         for ind in 0..<array.count {
             data[startIndex..<startIndex+4] = Data(Int32(array[ind]).bytes.reversed())
             startIndex += 4
