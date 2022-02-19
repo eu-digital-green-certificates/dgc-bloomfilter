@@ -20,7 +20,7 @@ public class BloomFilter {
      */
     
     // private var byteSize: Int
-    private var probRate: Double = 0.0
+    public var probRate: Double = 0.0
     private var version: UInt16 = 1
 
     private var numberOfHashes: UInt8 = 0
@@ -118,12 +118,30 @@ public class BloomFilter {
         return result
     }
     
+	private func bytesToFloat(bytes b: [UInt8]) -> Float {
+		let bigEndianValue = b.withUnsafeBufferPointer {
+			$0.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { $0.pointee }
+		}
+		let bitPattern = UInt32(bigEndian: bigEndianValue)
+		return Float(bitPattern: bitPattern)
+		// return Double(bitPattern: bitPattern)
+	}
+	
     public func readFrom(data: Data) {
         self.version = data[0..<2].reversed().withUnsafeBytes {$0.load(as: UInt16.self)}
         self.numberOfHashes = data[2..<3].withUnsafeBytes {$0.load(as: UInt8.self)}
         self.usedHashFunction = data[3..<4].withUnsafeBytes {$0.load(as: UInt8.self)}
-        self.probRate = data[4..<12].reversed().withUnsafeBytes {$0.load(as: Double.self)}
-        let declaredAmount = data[12..<16].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
+	
+		let float: Float = bytesToFloat(bytes: [UInt8](data[4..<8]))
+		print(float)
+		print(String(float))
+		print(convert([UInt8](data[4..<8].reversed())))
+		// self.probRate = Double(String(float))!
+		let val = [UInt8](data[4..<8])
+		// let dVal = Double(val)
+		// let str = d.map { String(format: "%02x", $0)}.joined()
+        // print(str)
+		let declaredAmount = data[12..<16].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
         self.declaredElementsCount =  Int(declaredAmount)
         
         let currentAmount = data[16..<20].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
@@ -160,6 +178,27 @@ public class BloomFilter {
         }
         return data
     }
+	
+	func convert(_ bytes: [UInt8]) -> Double {
+		var val: Float
+		// guard bytes.count == MemoryLayout<Double>.size else { return -1.0 }
+		val = bytes.withUnsafeBytes {
+			return $0.load(as: Float.self)
+		}
+		return Double(val);
+	}
+	
+	func _convertToBytes<T>(_ value: T, withCapacity capacity: Int) -> [UInt8] {
+		
+		var mutableValue = value
+		return withUnsafePointer(to: &mutableValue) {
+			
+			return $0.withMemoryRebound(to: UInt8.self, capacity: capacity) {
+				
+				return Array(UnsafeBufferPointer(start: $0, count: capacity))
+			}
+		}
+	}
 }
 
 

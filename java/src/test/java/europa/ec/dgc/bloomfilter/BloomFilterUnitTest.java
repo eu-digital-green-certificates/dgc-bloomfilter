@@ -325,6 +325,23 @@ public class BloomFilterUnitTest {
         this.addToTsiBloomFilter(testData);
     }
 
+
+    @Test
+    public void testSwiftJava() throws IOException, NoSuchAlgorithmException, FilterException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        BloomFilterImpl impl = new BloomFilterImpl(500, 0.000000001f);
+        impl.add(new byte[]{5, 3, 2, 7});
+        impl.add(new byte[]{5, 3, 0});
+        impl.add(new byte[]{5, 2, 7});
+        impl.add(new byte[]{5, 1, 2, 0});
+        impl.add(new byte[]{5});
+        impl.writeTo(output);
+        byte[] byteArrayBase64 = Base64.getEncoder().encode(output.toByteArray());
+        String base64 = Base64.getEncoder().encodeToString(output.toByteArray());
+        System.out.println(base64);
+        System.out.println(Arrays.toString(byteArrayBase64));
+    }
+
     public void calcBaseStringFromFilter(int i) {
         // get base64 from filter
         //  String filterAsBase64 = this.getFilterAsBase64(this.bloomFilter.getBytes());
