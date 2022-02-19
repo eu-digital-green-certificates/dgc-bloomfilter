@@ -44,25 +44,12 @@ public extension Bytes {
 
          return  UInt32(bigEndian: Data(array).withUnsafeBytes { $0.pointee })
      }
-	
-	func toDouble() -> Double {
-	   let diff = 8 - self.count
-	   var array: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0]
-
-		for idx in diff...7 {
-			array[idx] = self[idx-diff]
-		}
-
-	   return Double(array)!
-   }
+    
+    func toFloat() -> Float {
+            let bigEndianValue = self.withUnsafeBufferPointer {
+                $0.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { $0.pointee }
+            }
+            let bitPattern = UInt32(bigEndian: bigEndianValue)
+            return Float(bitPattern: bitPattern)
+        }
 }
-/*
-extension FloatingPoint {
-	init?(_ bytes: [UInt8]) {
-			guard bytes.count == MemoryLayout<Self>.size else { return nil }
-			self = bytes.withUnsafeBytes {
-				return $0.load(fromByteOffset: 0, as: Self.self)
-			}
-		}
-}
-*/

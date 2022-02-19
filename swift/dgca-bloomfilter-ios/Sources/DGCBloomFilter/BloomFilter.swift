@@ -122,22 +122,12 @@ public class BloomFilter {
         return result
     }
     
-	private func bytesToFloat(bytes b: [UInt8]) -> Float {
-		let bigEndianValue = b.withUnsafeBufferPointer {
-			$0.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { $0.pointee }
-		}
-		let bitPattern = UInt32(bigEndian: bigEndianValue)
-		return Float(bitPattern: bitPattern)
-		// return Double(bitPattern: bitPattern)
-	}
-	
-	
     public func readFrom(data: Data) {
         self.version = data[0..<2].reversed().withUnsafeBytes {$0.load(as: UInt16.self)}
         self.numberOfHashes = data[2..<3].withUnsafeBytes {$0.load(as: UInt8.self)}
         self.usedHashFunction = data[3..<4].withUnsafeBytes {$0.load(as: UInt8.self)}
 	
-		self.probRate = convert([UInt8](data[4..<8]))
+        self.probRate = [UInt8](data[4..<8]).toFloat()
         
 		let declaredAmount = data[8..<12].reversed().withUnsafeBytes {$0.load(as: UInt32.self)}
         self.definedElementAmount =  Int(declaredAmount)
