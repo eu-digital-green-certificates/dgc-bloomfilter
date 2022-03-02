@@ -158,6 +158,17 @@ public class BloomFilterUnitTest {
         assert impl.getData().length() == impl2.getData().length();
     }
 
+    // [15,199,244,86,154,44,221,52,220,176,10,28,50,22,39,89,127,65,185,241,43,83,191,105,198,228,16,3,9,217,175,163]
+    // [15,-57,-12,86,-102,44,-35,52,-36,-80,10,28,50,22,39,89,127,65,-71,-15,43,83,-65,105,-58,-28,16,3,9,-39,-81,-93]
+    @Test
+    public void testIosComparison() throws IOException, NoSuchAlgorithmException, FilterException {
+        BloomFilterImpl impl = new BloomFilterImpl(1, 0.00000000000039f);
+        // impl.add(new byte[]{15, 199, 244,86,154,44,221,52,220,176,10,28,50,22,39,89,127,65,185,241,43,83,191,105,198,228,16,3,9,217,175,163});
+        impl.add(new byte[]{15,-57,-12,86,-102,44,-35,52,-36,-80,10,28,50,22,39,89,127,65,-71,-15,43,83,-65,105,-58,-28,16,3,9,-39,-81,-93});
+        assert impl.mightContain(new byte[]{15,-57,-12,86,-102,44,-35,52,-36,-80,10,28,50,22,39,89,127,65,-71,-15,43,83,-65,105,-58,-28,16,3,9,-39,-81,-93});
+        
+    }
+
     @Test
     public void runTests() throws Exception {
         this.testObjects = this.readFromJson();
